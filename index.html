@@ -309,7 +309,6 @@
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">FECHA VENCE</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DIAS REST.</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">ESTADO</th>
-                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">OBSERVACION</th>
               </tr>
             </thead>
             <tbody id="tbody-alertas">
@@ -455,16 +454,13 @@ function getMovCols(keys) {
   return {
     fecha:    detectCol(keys, [/fecha/i, /registro/i, /time/i]) || keys[1],
     codigo:   detectCol(keys, [/^RBRPD$/i, /codigo/i]) || keys[5],
-    bpcs:     detectCol(keys, [/^RCCUS$/i, /bpcs/i]) || keys[2],
     
-    // Dejamos lote como null o vacío ya que no existe en el origen
+    // AQUÍ ESTÁ EL CAMBIO:
+    bpcs:     detectCol(keys, [/^RBLOT$/i, /^RCCUS$/i, /bpcs/i]) || keys[2],
+    
     lote:     null, 
-    
     origen:   detectCol(keys, [/^RFRLC$/i, /origen/i]) || keys[8],
-    
-    // CORRECCIÓN AQUÍ: Forzamos la detección exacta de RTOLC
     destino:  detectCol(keys, [/^RTOLC$/i, /destino/i, /to/i]) || keys[9],
-    
     cantidad: detectCol(keys, [/^RQTYT$/i, /cantidad/i, /qty/i]) || keys[7],
     usuario:  detectCol(keys, [/^RCOM$/i, /usuario/i, /user/i]) || keys[12],
   };

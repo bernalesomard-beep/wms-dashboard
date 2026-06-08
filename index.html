@@ -430,8 +430,8 @@ function detectCol(keys, patterns) {
 }
 
 function getSaldoCols(keys) {
-  const loteBpcs = detectCol(keys, [/bpcs/i]) || null;
-  const colSaldo = keys.find(k => k.trim().toLowerCase() === "saldo");
+  // Buscamos el nombre exacto de la columna "SALDO" (limpiando espacios)
+  const colSaldo = keys.find(k => k.trim().toUpperCase() === "SALDO");
   
   return {
     codigo:      detectCol(keys, [/^cod/i, /sku/i, /item/i]) || keys[0],
@@ -441,7 +441,9 @@ function getSaldoCols(keys) {
     lote_bpcs:   detectCol(keys, [/lote bpcs/i]),
     lote_fisico: detectCol(keys, [/lote fisico/i]),
     expira:      detectCol(keys, [/expir/i, /fecha/i]) || keys[5],
-    cantidad:    detectCol(keys, [/saldo/i, /cantidad/i]) || keys[9]
+    
+    // CORRECCIÓN: Usamos la variable colSaldo directamente
+    cantidad:    colSaldo 
   };
 }
   

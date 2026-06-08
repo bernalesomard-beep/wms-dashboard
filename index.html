@@ -569,21 +569,35 @@ function renderAlertas(data) {
   if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin datos</td></tr>'; return; }
   const cols = getSaldoCols(Object.keys(data[0]));
 
+  // Lista de ubicaciones a excluir (puedes añadir más si lo necesitas)
+  const excluidas = ['LF', 'WHS', 'OB'];
+
   const alertas = data
     .map(row => ({ row, days: daysToExpiry(row[cols.expira]) }))
-    .filter(x => x.days !== null && x.days <= ALERT_DAYS)
+    .filter(x => {
+      // 1. Mantiene solo las que vencen pronto
+      const esCritico = (x.days !== null && x.days <= ALERT_DAYS);
+      
+      // 2. Verifica si la ubicación contiene alguno de los términos prohibidos
+      const ubicacion = (x.row[cols.ubic] || '').toUpperCase();
+      const esExcluida = excluidas.some(patron => ubicacion.includes(patron));
+      
+      return esCritico && !esExcluida; // Solo retorna si es crítico Y NO está en la lista de excluidas
+    })
     .sort((a, b) => a.days - b.days);
 
+  // ... (el resto de tu código de renderizado sigue igual)
   document.getElementById('kpi-alertas').textContent = alertas.length.toLocaleString();
   document.getElementById('alert-badge').classList.toggle('hidden', alertas.length === 0);
 
   if (!alertas.length) {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="8" style="color:#2e7d32">Sin alertas criticas de vencimiento en los proximos ' + ALERT_DAYS + ' dias</td></tr>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8" style="color:#2e7d32">Sin alertas criticas (excluyendo LF, WHS, OB)</td></tr>';
     return;
   }
 
   let html = '';
   alertas.forEach(({ row, days }) => {
+    // ... (resto del código de renderizado igual)
     const rowClass = days <= 0 ? 'text-error font-medium' : 'text-secondary font-medium';
     const diasLabel = days < 0 ? 'VENCIDO (' + Math.abs(days) + 'd)' : days === 0 ? 'HOY' : days + ' dias';
     const badge = days <= 0 ? '<span class="badge-error">VENCIDO</span>' : days <= 7 ? '<span class="badge-error">CRITICO</span>' : '<span class="badge-warn">PROXIMO</span>';

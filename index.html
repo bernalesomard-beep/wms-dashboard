@@ -197,8 +197,14 @@
             </button>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
-              <input id="search-saldo" oninput="filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Buscar...">
+              <input id="search-saldo" onkeydown="if(event.key==='Enter')filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
             </div>
+            <button onclick="filterSaldo()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
+            </button>
+            <button onclick="clearFilterSaldo()" class="flex items-center gap-1 px-3 py-1 bg-surface border border-outline text-on-surface-variant font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">close</span> Limpiar
+            </button>
             <button onclick="loadSaldo()" id="btn-saldo" class="flex items-center gap-1 text-primary font-bold text-body-sm hover:underline whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar
             </button>
@@ -236,19 +242,25 @@
           <div class="flex items-center gap-3 flex-wrap justify-end">
             <div class="flex items-center gap-2">
               <label class="font-body-sm text-on-surface-variant text-[12px]">Desde:</label>
-              <input id="fecha-desde" oninput="filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-2 py-1 focus:ring-1 focus:ring-primary outline-none" type="date">
+              <input id="fecha-desde" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-2 py-1 focus:ring-1 focus:ring-primary outline-none" type="date">
             </div>
             <div class="flex items-center gap-2">
               <label class="font-body-sm text-on-surface-variant text-[12px]">Hasta:</label>
-              <input id="fecha-hasta" oninput="filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-2 py-1 focus:ring-1 focus:ring-primary outline-none" type="date">
+              <input id="fecha-hasta" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-2 py-1 focus:ring-1 focus:ring-primary outline-none" type="date">
             </div>
             <button onclick="exportCSV('mov')" class="flex items-center gap-1 px-3 py-1 bg-surface border border-secondary text-secondary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors">
               <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
             </button>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
-              <input id="search-mov" oninput="filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Buscar...">
+              <input id="search-mov" onkeydown="if(event.key==='Enter')filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
             </div>
+            <button onclick="filterMov()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
+            </button>
+            <button onclick="clearFilterMov()" class="flex items-center gap-1 px-3 py-1 bg-surface border border-outline text-on-surface-variant font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">close</span> Limpiar
+            </button>
             <button onclick="loadMov()" id="btn-mov" class="flex items-center gap-1 text-primary font-bold text-body-sm hover:underline whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar
             </button>
@@ -290,8 +302,14 @@
             </button>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
-              <input id="search-alertas" oninput="filterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Buscar...">
+              <input id="search-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
             </div>
+            <button onclick="filterAlertas()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
+            </button>
+            <button onclick="clearFilterAlertas()" class="flex items-center gap-1 px-3 py-1 bg-surface border border-outline text-on-surface-variant font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">close</span> Limpiar
+            </button>
             <button onclick="loadSaldo()" id="btn-alertas" class="flex items-center gap-1 text-primary font-bold text-body-sm hover:underline whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar
             </button>
@@ -787,36 +805,70 @@ function updateDonut(data) {
 // FILTROS
 // =============================================
 function filterSaldo() {
-  const q = document.getElementById('search-saldo').value.toLowerCase();
-  if (!q) { renderSaldo(dataSaldo); renderMov(dataMov); return; }
-  renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
-  // Sincronizar filtro en movimientos
-  document.getElementById('search-mov').value = document.getElementById('search-saldo').value;
-  renderMov(dataMov.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
+  if (!dataSaldo.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
+  const q = document.getElementById('search-saldo').value.toLowerCase().trim();
+  if (!q) { renderSaldo(dataSaldo); return; }
+  renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q))));
+}
+
+function clearFilterSaldo() {
+  document.getElementById('search-saldo').value = '';
+  renderSaldo(dataSaldo);
 }
 
 function filterMov() {
-  const q = document.getElementById('search-mov').value.toLowerCase();
-  const fechaDesde = document.getElementById('fecha-desde').value; // Formato YYYY-MM-DD
+  if (!dataMov.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
+  const q = document.getElementById('search-mov').value.toLowerCase().trim();
+  const fechaDesde = document.getElementById('fecha-desde').value; // YYYY-MM-DD
   const fechaHasta = document.getElementById('fecha-hasta').value;
 
+  // Detectar columna de fecha dinámicamente
+  const cols = dataMov.length ? getMovCols(Object.keys(dataMov[0])) : {};
+  const colFecha = cols.fecha;
+
   let filtered = dataMov.filter(r => {
-    // 1. Filtro de búsqueda por texto
-    const coincideTexto = Object.values(r).some(v => v.toLowerCase().includes(q));
-    
-    // 2. Filtro de fechas (asumiendo que tu fecha del CSV es algo como DD/MM/YYYY)
-    // Convertimos la fecha del CSV a formato comparable YYYY-MM-DD
-    const fechaRaw = r.fecha; // Ajusta 'fecha' si tu columna tiene otro nombre
-    const partes = fechaRaw.split(' ')[0].split('/'); // Ejemplo: "13/01/2026" -> ["13", "01", "2026"]
-    const fechaISO = partes.length === 3 ? `${partes[2]}-${partes[1]}-${partes[0]}` : "";
-    
-    const cumpleDesde = !fechaDesde || fechaISO >= fechaDesde;
-    const cumpleHasta = !fechaHasta || fechaISO <= fechaHasta;
-    
+    // 1. Filtro de texto
+    const coincideTexto = !q || Object.values(r).some(v => String(v).toLowerCase().includes(q));
+
+    // 2. Filtro de fechas usando la columna detectada dinámicamente
+    let cumpleDesde = true, cumpleHasta = true;
+    if ((fechaDesde || fechaHasta) && colFecha) {
+      const fechaRaw = String(r[colFecha] || '').trim();
+      // Intentar parsear DD/MM/YYYY o DD/MM/YYYY HH:MM
+      const partes = fechaRaw.split(' ')[0].split('/');
+      let fechaISO = '';
+      if (partes.length === 3 && partes[2].length === 4) {
+        fechaISO = `${partes[2]}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}`;
+      } else if (partes.length === 3 && partes[2].length === 2) {
+        fechaISO = `20${partes[2]}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}`;
+      }
+      cumpleDesde = !fechaDesde || fechaISO >= fechaDesde;
+      cumpleHasta = !fechaHasta || fechaISO <= fechaHasta;
+    }
+
     return coincideTexto && cumpleDesde && cumpleHasta;
   });
 
   renderMov(filtered);
+}
+
+function clearFilterMov() {
+  document.getElementById('search-mov').value = '';
+  document.getElementById('fecha-desde').value = '';
+  document.getElementById('fecha-hasta').value = '';
+  renderMov(dataMov);
+}
+
+function filterAlertas() {
+  if (!dataSaldo.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
+  const q = document.getElementById('search-alertas').value.toLowerCase().trim();
+  if (!q) { renderAlertas(dataSaldo); return; }
+  renderAlertas(dataSaldo.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q))));
+}
+
+function clearFilterAlertas() {
+  document.getElementById('search-alertas').value = '';
+  renderAlertas(dataSaldo);
 }
 
 // =============================================

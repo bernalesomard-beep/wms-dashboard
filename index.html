@@ -430,8 +430,15 @@ function detectCol(keys, patterns) {
 }
 
 function getSaldoCols(keys) {
+  // Depuración para ver qué nombres detecta el sistema
+  console.log("Cabeceras detectadas:", keys);
+  
   const loteBpcs = detectCol(keys, [/bpcs/i]) || null;
   const loteFisico = keys.find(k => /lote/i.test(k) && k !== loteBpcs) || null;
+  
+  // Busca la columna "SALDO" ignorando espacios y mayúsculas/minúsculas
+  const colSaldo = keys.find(k => k.trim().toLowerCase() === "saldo");
+  
   return {
     codigo:      detectCol(keys, [/^cod/i, /sku/i, /item/i, /articul/i]) || keys[0],
     desc:        detectCol(keys, [/desc/i, /nombre/i, /product/i, /name/i]) || keys[1],
@@ -439,10 +446,11 @@ function getSaldoCols(keys) {
     lote:        loteBpcs || detectCol(keys, [/lote/i, /batch/i]) || keys[3],
     lote_fisico: loteFisico,
     expira:      detectCol(keys, [/expir/i, /venc/i, /caduc/i, /fecha/i, /date/i]) || keys[4],
-    cantidad:    detectCol(keys, [/cant/i, /qty/i, /stock/i, /saldo/i, /quantity/i]) || keys[5],
+    // Usa la columna encontrada o fuerza el índice 9 (columna J)
+    cantidad:    colSaldo || keys[9], 
   };
 }
-
+  
 function getMovCols(keys) {
   return {
     fecha:    detectCol(keys, [/fecha/i, /date/i, /hora/i, /time/i]) || keys[0],

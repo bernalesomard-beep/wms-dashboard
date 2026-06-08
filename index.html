@@ -79,17 +79,17 @@
     </div>
   </div>
   <nav class="flex-1 space-y-1 px-2">
-    <a class="flex flex-col items-center gap-1 px-2 py-3 text-primary font-bold border-r-4 border-primary bg-primary-container/10 transition-colors duration-200" href="#">
+    <a data-nav="dashboard" onclick="showSection('dashboard')" class="flex flex-col items-center gap-1 px-2 py-3 text-primary font-bold border-r-4 border-primary bg-primary-container/10 transition-colors duration-200 cursor-pointer" href="#">
       <span class="material-symbols-outlined">dashboard</span>
       <span class="font-body-sm text-[11px]">Dashboard</span>
     </a>
-    <a class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200" href="#">
+    <a data-nav="saldo" onclick="showSection('saldo')" class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200 cursor-pointer" href="#">
       <span class="material-symbols-outlined">inventory_2</span><span class="font-body-sm text-[11px]">Saldo</span>
     </a>
-    <a class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200" href="#">
+    <a data-nav="movimiento" onclick="showSection('movimiento')" class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200 cursor-pointer" href="#">
       <span class="material-symbols-outlined">history</span><span class="font-body-sm text-[11px]">Movimiento</span>
     </a>
-    <a class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200" href="#">
+    <a data-nav="bajas" onclick="showSection('bajas')" class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200 cursor-pointer" href="#">
       <span class="material-symbols-outlined">trending_down</span><span class="font-body-sm text-[11px]">Reporte de Bajas</span>
     </a>
   </nav>
@@ -121,7 +121,7 @@
 <main class="mt-16 p-8 bg-background min-h-[calc(100vh-64px)] ml-40">
 
   <!-- Header -->
-  <div class="mb-8 flex justify-between items-end flex-wrap gap-2">
+  <div data-section="dashboard" class="mb-8 flex justify-between items-end flex-wrap gap-2">
     <div>
       <h2 class="font-headline-lg text-headline-lg text-primary mb-1">Resumen de Saldo (Stock)</h2>
       <p class="font-body-md text-body-md text-on-surface-variant">Estado actual de stock y movimientos logisticos.</p>
@@ -133,7 +133,7 @@
   </div>
 
   <!-- KPI Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <div data-section="dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant hover:border-primary transition-colors group">
       <div class="flex justify-between items-start mb-4">
         <div class="p-2 bg-primary-container/10 rounded-lg group-hover:bg-primary-container/20 transition-colors">
@@ -185,7 +185,7 @@
     <div class="col-span-12 lg:col-span-9 space-y-8">
 
       <!-- TABLA SALDO -->
-      <div class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
+      <div data-section="dashboard saldo" class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
         <div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center flex-wrap gap-2">
           <div>
             <h3 class="font-headline-md text-headline-md text-primary">Saldo de Inventario</h3>
@@ -233,7 +233,7 @@
       </div>
 
       <!-- TABLA MOVIMIENTOS -->
-      <div class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
+      <div data-section="dashboard movimiento" class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
         <div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center flex-wrap gap-2">
           <div>
             <h3 class="font-headline-md text-headline-md text-primary">Movimientos</h3>
@@ -287,7 +287,7 @@
       </div>
 
       <!-- TABLA ALERTAS -->
-      <div class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
+      <div data-section="dashboard saldo" class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
         <div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center flex-wrap gap-2">
           <div class="flex items-center gap-3">
             <span class="material-symbols-outlined text-primary">notification_important</span>
@@ -339,7 +339,7 @@
     </div>
 
     <!-- Right Column -->
-    <div class="col-span-12 lg:col-span-3 space-y-8">
+    <div data-section="dashboard saldo movimiento" class="col-span-12 lg:col-span-3 space-y-8">
       <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant">
         <h3 class="font-headline-md text-[18px] text-primary mb-4">Estado de Lotes</h3>
         <div class="relative w-36 h-36 mx-auto mb-6">
@@ -364,6 +364,59 @@
           </div>
         </div>
       </div>
+
+      <!-- Consulta Rápida de Lote -->
+      <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant">
+        <h3 class="font-headline-md text-[18px] text-primary mb-4">Consulta Rápida de Lote</h3>
+        <div class="relative flex items-center mb-3">
+          <span class="material-symbols-outlined absolute left-3 text-[16px] text-on-surface-variant">search</span>
+          <input id="lote-query" onkeydown="if(event.key==='Enter')buscarLote()" class="w-full bg-surface-container-low border border-outline text-on-surface font-label-data text-[13px] rounded-lg pl-9 pr-3 py-2 focus:ring-2 focus:ring-primary outline-none" placeholder="Digite Lote BPCS...">
+        </div>
+        <button onclick="buscarLote()" class="w-full flex items-center justify-center gap-1 px-3 py-2 bg-primary text-white font-bold rounded-lg text-[12px] hover:opacity-90 transition-colors mb-3">
+          <span class="material-symbols-outlined text-[16px]">manage_search</span> Buscar
+        </button>
+        <!-- Encabezado info del lote (aparece tras búsqueda) -->
+        <div id="lote-header" class="hidden mb-3 pb-3 border-b border-outline-variant">
+          <p class="font-label-data text-[11px] text-on-surface-variant uppercase tracking-wide mb-1">Producto</p>
+          <p class="font-body-md text-[13px] font-bold text-on-surface leading-tight" id="lote-desc-val">—</p>
+          <div class="flex gap-4 mt-2">
+            <div>
+              <p class="font-table-header text-table-header text-on-surface-variant">LOTE FÍSICO</p>
+              <p class="font-label-data text-[13px] font-bold text-on-surface" id="lote-fisico-val">—</p>
+            </div>
+            <div>
+              <p class="font-table-header text-table-header text-on-surface-variant">EXPIRACIÓN</p>
+              <p class="font-label-data text-[13px] font-bold" id="lote-expira-val">—</p>
+            </div>
+            <div>
+              <p class="font-table-header text-table-header text-on-surface-variant">ESTADO</p>
+              <p id="lote-estado-val" class="mt-0.5">—</p>
+            </div>
+          </div>
+        </div>
+        <!-- Tabla de ubicaciones -->
+        <div id="lote-tabla" class="hidden">
+          <p class="font-table-header text-table-header text-on-surface-variant mb-2">UBICACIONES (<span id="lote-count">0</span>)</p>
+          <div class="overflow-y-auto max-h-48 custom-scrollbar rounded border border-outline-variant">
+            <table class="w-full border-collapse text-[11px]">
+              <thead>
+                <tr class="bg-primary text-white">
+                  <th class="px-2 py-1.5 text-left font-bold tracking-wide">UBIC.</th>
+                  <th class="px-2 py-1.5 text-left font-bold tracking-wide">WHS</th>
+                  <th class="px-2 py-1.5 text-right font-bold tracking-wide">CANT.</th>
+                </tr>
+              </thead>
+              <tbody id="lote-tbody"></tbody>
+            </table>
+          </div>
+          <div class="flex justify-between items-center mt-2 pt-2 border-t border-outline-variant">
+            <span class="font-table-header text-table-header text-on-surface-variant">TOTAL</span>
+            <span class="font-label-data text-[13px] font-bold text-primary" id="lote-total">—</span>
+          </div>
+        </div>
+        <p id="lote-msg" class="text-[12px] text-on-surface-variant mt-1 hidden"></p>
+      </div>
+
     </div>
   </div>
 </main>
@@ -802,8 +855,94 @@ function updateDonut(data) {
 }
 
 // =============================================
-// FILTROS
+// CONSULTA RÁPIDA DE LOTE
 // =============================================
+function buscarLote() {
+  const q = document.getElementById('lote-query').value.trim().toLowerCase();
+  const msg      = document.getElementById('lote-msg');
+  const header   = document.getElementById('lote-header');
+  const tabla    = document.getElementById('lote-tabla');
+
+  // Reset
+  header.classList.add('hidden');
+  tabla.classList.add('hidden');
+  msg.classList.add('hidden');
+  msg.textContent = '';
+
+  if (!q) return;
+
+  if (!dataSaldo.length) {
+    msg.textContent = 'Los datos aún no han cargado. Presiona Actualizar.';
+    msg.classList.remove('hidden');
+    return;
+  }
+
+  const cols = getSaldoCols(Object.keys(dataSaldo[0]));
+
+  // Buscar coincidencias exactas por Lote BPCS
+  const matches = dataSaldo.filter(r =>
+    String(r[cols.lote_bpcs] || '').toLowerCase() === q
+  );
+
+  // Si no hay exacta, buscar parcial
+  const results = matches.length
+    ? matches
+    : dataSaldo.filter(r => String(r[cols.lote_bpcs] || '').toLowerCase().includes(q));
+
+  if (!results.length) {
+    msg.textContent = 'No se encontró ningún lote con ese valor.';
+    msg.classList.remove('hidden');
+    return;
+  }
+
+  // Todos los resultados comparten lote físico y expiración (son del mismo BPCS)
+  const first = results[0];
+  const days  = daysToExpiry(first[cols.expira]);
+
+  // Encabezado
+  document.getElementById('lote-desc-val').textContent   = first[cols.desc]        || '—';
+  document.getElementById('lote-fisico-val').textContent = first[cols.lote_fisico]  || '—';
+
+  const expEl = document.getElementById('lote-expira-val');
+  expEl.textContent = first[cols.expira] || '—';
+  expEl.className = 'font-label-data text-[13px] font-bold ' +
+    (days !== null && days < 0  ? 'text-error' :
+     days !== null && days <= 30 ? 'text-secondary' : 'text-on-surface');
+
+  document.getElementById('lote-estado-val').innerHTML = statusBadge(days);
+  header.classList.remove('hidden');
+
+  // Tabla de ubicaciones
+  let totalCant = 0;
+  let tbodyHtml = '';
+
+  results.forEach(r => {
+    let rawQty = String(r[cols.cantidad] || '0').replace(/[^\d.,]/g, '');
+    if (rawQty.includes(',') && rawQty.includes('.')) rawQty = rawQty.replace(/\./g,'').replace(',','.');
+    else if (rawQty.includes(',')) rawQty = rawQty.replace(',','.');
+    else rawQty = rawQty.replace(/\./g,'');
+    const qty = parseFloat(rawQty) || 0;
+    totalCant += qty;
+
+    tbodyHtml += '<tr class="hover:bg-surface-container-low border-b border-outline-variant last:border-0">'
+      + '<td class="px-2 py-1.5 font-label-data">' + (r[cols.ubic] || '—') + '</td>'
+      + '<td class="px-2 py-1.5 font-label-data text-on-surface-variant">' + (r[cols.whs] || '—') + '</td>'
+      + '<td class="px-2 py-1.5 font-label-data font-bold text-right">' + Math.round(qty).toLocaleString('es-PE') + '</td>'
+      + '</tr>';
+  });
+
+  document.getElementById('lote-tbody').innerHTML = tbodyHtml;
+  document.getElementById('lote-count').textContent = results.length;
+  document.getElementById('lote-total').textContent = Math.round(totalCant).toLocaleString('es-PE');
+  tabla.classList.remove('hidden');
+
+  if (!matches.length) {
+    msg.textContent = 'Búsqueda parcial: ' + results.length + ' resultado(s).';
+    msg.classList.remove('hidden');
+  }
+}
+
+
 function filterSaldo() {
   if (!dataSaldo.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
   const q = document.getElementById('search-saldo').value.toLowerCase().trim();
@@ -933,18 +1072,43 @@ function exportCSV(type) {
 }
 
 // =============================================
-// NAV ACTIVO
+// NAVEGACIÓN POR SECCIONES
 // =============================================
-document.querySelectorAll('nav a').forEach(link => {
-  link.addEventListener('click', () => {
-    document.querySelectorAll('nav a').forEach(l => {
-      l.classList.remove('text-primary','font-bold','border-r-4','border-primary','bg-primary-container/10');
-      l.classList.add('text-on-surface-variant');
-    });
-    link.classList.add('text-primary','font-bold','border-r-4','border-primary','bg-primary-container/10');
-    link.classList.remove('text-on-surface-variant');
+function showSection(section) {
+  // Actualizar nav activo
+  document.querySelectorAll('nav a[data-nav]').forEach(l => {
+    const isActive = l.getAttribute('data-nav') === section;
+    l.classList.toggle('text-primary',         isActive);
+    l.classList.toggle('font-bold',            isActive);
+    l.classList.toggle('border-r-4',           isActive);
+    l.classList.toggle('border-primary',       isActive);
+    l.classList.toggle('bg-primary-container/10', isActive);
+    l.classList.toggle('text-on-surface-variant', !isActive);
   });
-});
+
+  // Mostrar/ocultar elementos según data-section
+  document.querySelectorAll('[data-section]').forEach(el => {
+    const sections = el.getAttribute('data-section').split(' ');
+    el.style.display = sections.includes(section) ? '' : 'none';
+  });
+
+  // Actualizar título del header
+  const titles = {
+    dashboard:  { h: 'Resumen de Saldo (Stock)',   p: 'Estado actual de stock y movimientos logisticos.' },
+    saldo:      { h: 'Saldo de Inventario',         p: 'Consulta y filtra el stock actual por producto, lote o ubicación.' },
+    movimiento: { h: 'Movimientos',                 p: 'Historial de movimientos logísticos registrados.' },
+    bajas:      { h: 'Reporte de Bajas',            p: 'Productos dados de baja del inventario.' },
+  };
+  const t = titles[section] || titles.dashboard;
+  const h2 = document.querySelector('[data-section="dashboard"] h2');
+  const p  = document.querySelector('[data-section="dashboard"] p');
+  if (h2) h2.textContent = t.h;
+  if (p)  p.textContent  = t.p;
+}
+
+// Inicializar en dashboard
+showSection('dashboard');
+
 
 // =============================================
 // INICIO Y AUTO-REFRESH CADA 60 SEGUNDOS

@@ -666,30 +666,53 @@ function updateKPIs(data) {
 function updateDonut(data) {
   if (!data.length) return;
   const cols = getSaldoCols(Object.keys(data[0]));
+  
   let vig = 0, prox = 0, venc = 0;
+  
   data.forEach(row => {
-    const d = daysToExpiry(row[cols.expira]);
-    if (d === null || d > ALERT_DAYS) vig++;
-    else if (d >= 0) prox++;
-    else venc++;
+    // Obtenemos el valor de la columna expira y convertimos a número
+    const rawVal = row[cols.expira];
+    const cant = parseFloat(row[cols.cantidad]) || 0; // Usamos la cantidad de la fila
+    const d = daysToExpiry(rawVal);
+
+    // Clasificación lógica:
+    // Si d es null, es un producto sin fecha (lo tratamos como vigente)
+    // Si d < 0, está vencido
+    // Si d > ALERT_DAYS, está vigente
+    // Si está entre 0 y ALERT_DAYS, está por vencer
+    if (d === null || d > ALERT_DAYS) {
+        vig += cant;
+    } else if (d >= 0) {
+        prox += cant;
+    } else {
+        venc += Math.abs(cant); // Usamos valor absoluto para el conteo
+    }
   });
-  const total = vig + prox + venc || 1;
+
+  const total = (vig + prox + venc) || 1;
   const pct = Math.round((vig / total) * 100);
+  
+  // Actualizar textos
   document.getElementById('donut-pct').textContent = pct + '%';
   document.getElementById('legend-vigentes').textContent = vig.toLocaleString();
   document.getElementById('legend-cercanos').textContent = prox.toLocaleString();
   document.getElementById('legend-vencidos').textContent = venc.toLocaleString();
 
+  // Redibujar gráfico
   const canvas = document.getElementById('donut-chart');
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, 144, 144);
+  
   const segs = [
-    { v: vig, c: '#124343' }, { v: prox, c: '#725478' }, { v: venc, c: '#ba1a1a' }
+    { v: vig, c: '#124343' }, // Vigentes
+    { v: prox, c: '#725478' }, // Por Vencer
+    { v: venc, c: '#ba1a1a' }  // Vencidos
   ];
+  
   let start = -Math.PI / 2;
   segs.forEach(s => {
     const sweep = (s.v / total) * 2 * Math.PI;
-    if (sweep === 0) return;
+    if (sweep <= 0) return;
     ctx.beginPath();
     ctx.moveTo(72, 72);
     ctx.arc(72, 72, 58, start, start + sweep);
@@ -698,6 +721,8 @@ function updateDonut(data) {
     ctx.fill();
     start += sweep;
   });
+  
+  // Círculo blanco central para efecto donut
   ctx.beginPath();
   ctx.arc(72, 72, 40, 0, 2 * Math.PI);
   ctx.fillStyle = '#ffffff';

@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html class="light" lang="es">
 <head>
 <meta charset="utf-8">
@@ -128,7 +128,7 @@
     </div>
     <div class="flex items-center gap-2">
       <span class="auto-dot"></span>
-      <span class="last-update" id="last-update-global">Iniciando auto-actualizacion cada 60s...</span>
+      <span class="last-update" id="last-update-global">Iniciando auto-actualizacion cada 5min...</span>
     </div>
   </div>
 
@@ -629,9 +629,20 @@ function renderMov(data) {
 function updateKPIs(data) {
   if (!data.length) return;
   const cols = getSaldoCols(Object.keys(data[0]));
+  // DEBUG: mostrar en consola qué columna se detectó y los primeros valores
+  console.log('[KPI DEBUG] Columnas detectadas:', cols);
+  console.log('[KPI DEBUG] Primeras 3 filas - columna cantidad:', data.slice(0,3).map(r => r[cols.cantidad]));
+  console.log('[KPI DEBUG] Todas las keys del sheet:', Object.keys(data[0]));
   let total = 0, vencidos = 0;
   data.forEach(row => {
-    const qty = parseFloat((row[cols.cantidad]||'0').replace(/[^0-9.\-]/g,'')) || 0;
+    const rawQty = (row[cols.cantidad]||'0').trim();
+    // Soporta formatos: 1234 / 1.234 / 1,234 / 1.234,56 / 1,234.56
+    let qty = 0;
+    if (rawQty !== '') {
+      // Si tiene coma decimal estilo europeo (ej: 1.234,56)
+      let normalized = rawQty.replace(/\./g,'').replace(',','.');
+      qty = parseFloat(normalized) || 0;
+    }
     total += qty;
     const d = daysToExpiry(row[cols.expira]);
     if (d !== null && d < 0) vencidos += qty;
@@ -690,8 +701,11 @@ function updateDonut(data) {
 // =============================================
 function filterSaldo() {
   const q = document.getElementById('search-saldo').value.toLowerCase();
-  if (!q) { renderSaldo(dataSaldo); return; }
+  if (!q) { renderSaldo(dataSaldo); renderMov(dataMov); return; }
   renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
+  // Sincronizar filtro en movimientos
+  document.getElementById('search-mov').value = document.getElementById('search-saldo').value;
+  renderMov(dataMov.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
 }
 
 function filterMov() {
@@ -763,7 +777,7 @@ document.querySelectorAll('nav a').forEach(link => {
 // =============================================
 loadSaldo();
 loadMov();
-setInterval(() => { loadSaldo(); loadMov(); }, 60000);
+setInterval(() => { loadSaldo(); loadMov(); }, 300000);
 </script>
 </body>
 </html>

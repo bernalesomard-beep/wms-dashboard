@@ -309,6 +309,7 @@
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">FECHA VENCE</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DIAS REST.</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">ESTADO</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">OBSERVACION</th>
               </tr>
             </thead>
             <tbody id="tbody-alertas">
@@ -574,6 +575,7 @@ function renderSaldo(data) {
 // =============================================
 function renderAlertas(data) {
   const tbody = document.getElementById('tbody-alertas');
+  // Se mantiene colspan="9" porque ahora tienes 9 columnas exactas
   if (!data.length) { 
     tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin alertas criticas</td></tr>'; 
     return; 
@@ -605,17 +607,16 @@ function renderAlertas(data) {
     const diasLabel = days < 0 ? 'VENCIDO (' + Math.abs(days) + 'd)' : days === 0 ? 'HOY' : days + ' dias';
     const badge = days <= 0 ? '<span class="badge-error">VENCIDO</span>' : days <= 7 ? '<span class="badge-error">CRITICO</span>' : '<span class="badge-warn">PROXIMO</span>';
     
-    // ORDEN CORREGIDO para que coincida con el encabezado:
     html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.whs]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data font-bold border border-outline-variant">' + diasLabel + '</td>'
       + '<td class="px-3 py-3 text-center border border-outline-variant">' + badge + '</td>'
+      + '<td class="px-3 py-3 border border-outline-variant"></td>' // Columna OBSERVACION vacía
       + '</tr>';
   });
   tbody.innerHTML = html;

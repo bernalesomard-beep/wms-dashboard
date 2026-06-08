@@ -575,7 +575,7 @@ function renderSaldo(data) {
 function renderAlertas(data) {
   const tbody = document.getElementById('tbody-alertas');
   if (!data.length) { 
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin datos</td></tr>'; 
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin alertas criticas</td></tr>'; 
     return; 
   }
   
@@ -585,11 +585,8 @@ function renderAlertas(data) {
     .map(row => ({ row, days: daysToExpiry(row[cols.expira]) }))
     .filter(x => {
       const esCritico = (x.days !== null && x.days <= ALERT_DAYS);
-      
-      // AQUÍ ESTÁ EL CAMBIO: Ahora filtramos usando cols.whs
       const valorWhs = (x.row[cols.whs] || '').toUpperCase();
       const esExcluida = valorWhs.includes('LF') || valorWhs.includes('OB');
-      
       return esCritico && !esExcluida;
     })
     .sort((a, b) => a.days - b.days);
@@ -608,21 +605,22 @@ function renderAlertas(data) {
     const diasLabel = days < 0 ? 'VENCIDO (' + Math.abs(days) + 'd)' : days === 0 ? 'HOY' : days + ' dias';
     const badge = days <= 0 ? '<span class="badge-error">VENCIDO</span>' : days <= 7 ? '<span class="badge-error">CRITICO</span>' : '<span class="badge-warn">PROXIMO</span>';
     
+    // ORDEN CORREGIDO para que coincida con el encabezado:
     html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.whs]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (cols.lote_fisico ? (row[cols.lote_fisico]||'—') : '—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
-      + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
+      + '<td class="px-3 py-3 font-label-data font-bold border border-outline-variant">' + diasLabel + '</td>'
       + '<td class="px-3 py-3 text-center border border-outline-variant">' + badge + '</td>'
       + '</tr>';
   });
   tbody.innerHTML = html;
 }
-
+  
 // =============================================
 // CARGAR MOVIMIENTOS
 // =============================================

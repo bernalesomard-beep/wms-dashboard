@@ -453,14 +453,14 @@ function getSaldoCols(keys) {
   
 function getMovCols(keys) {
   return {
-    fecha:    detectCol(keys, [/fecha/i, /date/i, /hora/i, /time/i]) || keys[0],
-    codigo:   detectCol(keys, [/^rbrpd$/i, /^cod/i, /sku/i, /item/i, /articul/i]) || keys[1],
-    bpcs:     detectCol(keys, [/bpcs/i]) || keys[2],
-    lote:     detectCol(keys, [/^rblot$/i, /lote/i, /batch/i]) || keys[3],
-    origen:   detectCol(keys, [/^rfrlc$/i, /origen/i, /source/i, /from/i, /salida/i]) || keys[4],
-    destino:  detectCol(keys, [/^riolc$/i, /destino/i, /dest/i, /entrada/i, /hacia/i]) || keys[5],
-    cantidad: detectCol(keys, [/^rqty$/i, /cant/i, /qty/i, /quantity/i]) || keys[6],
-    usuario:  detectCol(keys, [/^rcom$/i, /usuario/i, /user/i, /operador/i, /resp/i]) || keys[7],
+    fecha:    detectCol(keys, [/fecha/i, /date/i, /hora/i, /time/i, /registro/i]) || keys[1], // Ajustado a columna REGISTRO
+    codigo:   detectCol(keys, [/^RBRPD$/i, /codigo/i, /sku/i, /item/i]) || keys[4],
+    bpcs:     detectCol(keys, [/bpcs/i, /rccus/i]) || keys[2],
+    lote:     detectCol(keys, [/^RBLOT$/i, /lote/i, /batch/i]) || keys[5],
+    origen:   detectCol(keys, [/^RFRLC$/i, /origen/i, /source/i, /from/i, /salida/i]) || keys[6],
+    destino:  detectCol(keys, [/^RIOLC$/i, /destino/i, /dest/i, /entrada/i, /hacia/i]) || keys[7],
+    cantidad: detectCol(keys, [/^RQTYT$/i, /cantidad/i, /cant/i, /qty/i]) || keys[8],
+    usuario:  detectCol(keys, [/^RCOM$/i, /usuario/i, /user/i, /operador/i]) || keys[12],
   };
 }
 

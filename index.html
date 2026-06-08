@@ -419,6 +419,68 @@
 
     </div>
   </div>
+
+  <!-- SECCIÓN REPORTE DE BAJAS -->
+  <div data-section="bajas" style="display:none">
+    <div class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
+      <div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center flex-wrap gap-3">
+        <div>
+          <h3 class="font-headline-md text-headline-md text-primary">Reporte de Bajas</h3>
+          <span class="last-update" id="last-update-bajas"></span>
+        </div>
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-2">
+            <label class="font-body-sm text-on-surface-variant text-[12px]">Desde:</label>
+            <input id="bajas-desde" type="date" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-2 py-1 focus:ring-1 focus:ring-primary outline-none">
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="font-body-sm text-on-surface-variant text-[12px]">Hasta:</label>
+            <input id="bajas-hasta" type="date" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-2 py-1 focus:ring-1 focus:ring-primary outline-none">
+          </div>
+          <button onclick="exportCSV('bajas')" class="flex items-center gap-1 px-3 py-1 bg-surface border border-secondary text-secondary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors">
+            <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
+          </button>
+          <div class="relative flex items-center">
+            <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
+            <input id="search-bajas" onkeydown="if(event.key==='Enter')filterBajas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
+          </div>
+          <button onclick="filterBajas()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
+            <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
+          </button>
+          <button onclick="clearFilterBajas()" class="flex items-center gap-1 px-3 py-1 bg-surface border border-outline text-on-surface-variant font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors whitespace-nowrap">
+            <span class="material-symbols-outlined text-[16px]">close</span> Limpiar
+          </button>
+          <button onclick="loadBajas()" id="btn-bajas" class="flex items-center gap-1 text-primary font-bold text-body-sm hover:underline whitespace-nowrap">
+            <span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar
+          </button>
+        </div>
+      </div>
+      <div class="overflow-y-auto max-h-[calc(100vh-280px)] custom-scrollbar">
+        <table class="w-full border-collapse border border-outline-variant">
+          <thead>
+            <tr class="bg-primary text-white">
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">FECHA</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">CODIGO</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">EAN13</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">LOTE</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">EXPIRA</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">CANTIDAD</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">BODEGA</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">UBIC. ORIGEN</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">UBIC. DESTINO</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">ESTATUS</th>
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">USUARIO</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-bajas">
+            <tr class="loading-row"><td colspan="12"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando datos desde Google Sheets...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <!-- FAB -->
@@ -432,6 +494,7 @@
 // =============================================
 const URL_SALDO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=273620597&single=true&output=csv';
 const URL_MOV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=2101441845&single=true&output=csv';
+const URL_BAJAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=868163741&single=true&output=csv';
 const ALERT_DAYS = 30;
 
 // Proxy para evitar CORS al abrir el archivo localmente
@@ -455,6 +518,7 @@ async function fetchCSV(url) {
 
 let dataSaldo = [];
 let dataMov   = [];
+let dataBajas = [];
 
 // =============================================
 // PARSE CSV (manejo de comillas y comas)
@@ -1056,8 +1120,16 @@ function exportCSV(type) {
       };
     });
     filename = 'movimientos_filtrados.csv';
-  } else {
-    // ... lógica de alertas
+  } else if (type === 'bajas') {
+    const rows = Array.from(document.querySelectorAll('#tbody-bajas tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
+    data = rows.map(tr => {
+      const tds = tr.querySelectorAll('td');
+      return { fecha: tds[0]?.innerText, codigo: tds[1]?.innerText, descripcion: tds[2]?.innerText,
+               ean13: tds[3]?.innerText, lote: tds[4]?.innerText, expira: tds[5]?.innerText,
+               cantidad: tds[6]?.innerText, bodega: tds[7]?.innerText, ubic_origen: tds[8]?.innerText,
+               ubic_destino: tds[9]?.innerText, estatus: tds[10]?.innerText, usuario: tds[11]?.innerText };
+    });
+    filename = 'reporte_bajas.csv';
   }
 
   if (!data || data.length === 0) return;
@@ -1111,11 +1183,115 @@ showSection('dashboard');
 
 
 // =============================================
-// INICIO Y AUTO-REFRESH CADA 60 SEGUNDOS
+// REPORTE DE BAJAS
 // =============================================
+async function loadBajas() {
+  const btn = document.getElementById('btn-bajas');
+  btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
+  document.getElementById('tbody-bajas').innerHTML = '<tr class="loading-row"><td colspan="12"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
+
+  try {
+    const text = await fetchCSV(URL_BAJAS);
+    console.log('[BAJAS] Primeros 300 chars:', text.substring(0, 300));
+    const { headers, rows } = parseCSV(text);
+    console.log('[BAJAS] Cabeceras detectadas:', headers);
+    console.log('[BAJAS] Total filas:', rows.length);
+    dataBajas = toObjects(headers, rows);
+    console.log('[BAJAS] Primer objeto:', dataBajas[0]);
+    renderBajas(dataBajas);
+    document.getElementById('last-update-bajas').textContent = ts();
+  } catch(e) {
+    console.error('[BAJAS] Error:', e);
+    document.getElementById('tbody-bajas').innerHTML = '<tr class="error-row"><td colspan="12">Error al cargar: ' + e.message + '</td></tr>';
+  }
+  btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar';
+}
+
+function getBajasCols(keys) {
+  return {
+    fecha:    detectCol(keys, [/^fecha/i, /date/i])           || keys[0],
+    codigo:   detectCol(keys, [/^cod/i, /sku/i, /item/i])     || keys[1],
+    desc:     detectCol(keys, [/desc/i, /nombre/i, /produc/i])|| keys[2],
+    ean:      detectCol(keys, [/ean/i, /barcode/i, /upc/i])   || keys[3],
+    lote:     detectCol(keys, [/^lote$/i, /lote.fis/i])       || keys[4],
+    expira:   detectCol(keys, [/expir/i, /venc/i])            || keys[5],
+    cantidad: detectCol(keys, [/cant/i, /qty/i, /amount/i])   || keys[6],
+    bodega:   detectCol(keys, [/bodega/i, /whs/i])            || keys[7],
+    origen:   detectCol(keys, [/origen/i, /from/i])           || keys[8],
+    destino:  detectCol(keys, [/destino/i, /to\b/i])          || keys[9],
+    estatus:  detectCol(keys, [/estatus/i, /status/i, /estado/i]) || keys[10],
+    usuario:  detectCol(keys, [/usuario/i, /user/i])          || keys[11],
+  };
+}
+
+function renderBajas(data) {
+  const tbody = document.getElementById('tbody-bajas');
+  if (!data.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="12">Sin registros de bajas</td></tr>';
+    return;
+  }
+  const cols = getBajasCols(Object.keys(data[0]));
+  let html = '';
+  data.forEach(row => {
+    const days = daysToExpiry(row[cols.expira]);
+    const rowClass = days !== null && days < 0 ? 'text-error' : days !== null && days <= 30 ? 'text-secondary' : '';
+    html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
+      + '<td class="px-3 py-2 font-label-data whitespace-nowrap border border-outline-variant">' + (row[cols.fecha]    || '—') + '</td>'
+      + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.codigo]   || '—') + '</td>'
+      + '<td class="px-3 py-2 border border-outline-variant">'                                   + (row[cols.desc]     || '—') + '</td>'
+      + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.ean]      || '—') + '</td>'
+      + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.lote]     || '—') + '</td>'
+      + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.expira]   || '—') + '</td>'
+      + '<td class="px-3 py-2 font-label-data font-bold text-right border border-outline-variant">' + (row[cols.cantidad] || '0') + '</td>'
+      + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.bodega]   || '—') + '</td>'
+      + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.origen]   || '—') + '</td>'
+      + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.destino]  || '—') + '</td>'
+      + '<td class="px-3 py-2 text-center border border-outline-variant">'                       + (row[cols.estatus]  || '—') + '</td>'
+      + '<td class="px-3 py-2 border border-outline-variant">'                                   + (row[cols.usuario]  || '—') + '</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+function filterBajas() {
+  if (!dataBajas.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
+  const q          = document.getElementById('search-bajas').value.trim().toLowerCase();
+  const fechaDesde = document.getElementById('bajas-desde').value;
+  const fechaHasta = document.getElementById('bajas-hasta').value;
+  const cols       = getBajasCols(Object.keys(dataBajas[0]));
+  const colFecha   = cols.fecha;
+
+  const filtered = dataBajas.filter(r => {
+    const coincideTexto = !q || Object.values(r).some(v => String(v).toLowerCase().includes(q));
+    let cumpleDesde = true, cumpleHasta = true;
+    if ((fechaDesde || fechaHasta) && colFecha) {
+      const fechaRaw = String(r[colFecha] || '').trim();
+      const partes = fechaRaw.split(' ')[0].split('/');
+      let fechaISO = '';
+      if (partes.length === 3 && partes[2].length === 4)
+        fechaISO = `${partes[2]}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}`;
+      else if (partes.length === 3 && partes[2].length === 2)
+        fechaISO = `20${partes[2]}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}`;
+      cumpleDesde = !fechaDesde || fechaISO >= fechaDesde;
+      cumpleHasta = !fechaHasta || fechaISO <= fechaHasta;
+    }
+    return coincideTexto && cumpleDesde && cumpleHasta;
+  });
+  renderBajas(filtered);
+}
+
+function clearFilterBajas() {
+  document.getElementById('search-bajas').value = '';
+  document.getElementById('bajas-desde').value  = '';
+  document.getElementById('bajas-hasta').value  = '';
+  renderBajas(dataBajas);
+}
+
+
 loadSaldo();
 loadMov();
-setInterval(() => { loadSaldo(); loadMov(); }, 300000);
+loadBajas();
+setInterval(() => { loadSaldo(); loadMov(); loadBajas(); }, 300000);
 </script>
 </body>
 </html>

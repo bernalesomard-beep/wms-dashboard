@@ -575,9 +575,9 @@ function renderSaldo(data) {
 // =============================================
 function renderAlertas(data) {
   const tbody = document.getElementById('tbody-alertas');
-  // Se mantiene colspan="9" porque ahora tienes 9 columnas exactas
+  // Ajustado a 8 columnas
   if (!data.length) { 
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin alertas criticas</td></tr>'; 
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin alertas criticas</td></tr>'; 
     return; 
   }
   
@@ -597,7 +597,7 @@ function renderAlertas(data) {
   document.getElementById('alert-badge').classList.toggle('hidden', alertas.length === 0);
 
   if (!alertas.length) {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="9" style="color:#2e7d32">Sin alertas criticas</td></tr>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8" style="color:#2e7d32">Sin alertas criticas</td></tr>';
     return;
   }
 
@@ -616,7 +616,6 @@ function renderAlertas(data) {
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data font-bold border border-outline-variant">' + diasLabel + '</td>'
       + '<td class="px-3 py-3 text-center border border-outline-variant">' + badge + '</td>'
-      + '<td class="px-3 py-3 border border-outline-variant"></td>' // Columna OBSERVACION vacía
       + '</tr>';
   });
   tbody.innerHTML = html;

@@ -210,6 +210,7 @@
               <tr class="bg-primary text-white">
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">WHS</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">UBICACION</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE BPCS</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE</th>
@@ -430,24 +431,17 @@ function detectCol(keys, patterns) {
 }
 
 function getSaldoCols(keys) {
-  // Depuración para ver qué nombres detecta el sistema
-  console.log("Cabeceras detectadas:", keys);
-  
   const loteBpcs = detectCol(keys, [/bpcs/i]) || null;
-  const loteFisico = keys.find(k => /lote/i.test(k) && k !== loteBpcs) || null;
-  
-  // Busca la columna "SALDO" ignorando espacios y mayúsculas/minúsculas
   const colSaldo = keys.find(k => k.trim().toLowerCase() === "saldo");
   
   return {
-    codigo:      detectCol(keys, [/^cod/i, /sku/i, /item/i, /articul/i]) || keys[0],
-    desc:        detectCol(keys, [/desc/i, /nombre/i, /product/i, /name/i]) || keys[1],
-    ubic:        detectCol(keys, [/ubic/i, /loc/i, /rack/i, /posic/i]) || keys[2],
-    lote:        loteBpcs || detectCol(keys, [/lote/i, /batch/i]) || keys[3],
-    lote_fisico: loteFisico,
-    expira:      detectCol(keys, [/expir/i, /venc/i, /caduc/i, /fecha/i, /date/i]) || keys[4],
-    // Usa la columna encontrada o fuerza el índice 9 (columna J)
-    cantidad:    colSaldo || keys[9], 
+    codigo:   detectCol(keys, [/^cod/i, /sku/i, /item/i]) || keys[0],
+    desc:     detectCol(keys, [/desc/i, /nombre/i]) || keys[1],
+    whs:      detectCol(keys, [/whs/i]) || keys[2], 
+    ubic:     detectCol(keys, [/ubic/i, /loc/i]) || keys[3], 
+    lote:     loteBpcs || detectCol(keys, [/lote/i]) || keys[4],
+    expira:   detectCol(keys, [/expir/i, /fecha/i]) || keys[5],
+    cantidad: colSaldo || keys[9], // Asegúrate que la columna Saldo sea realmente la 10ma (índice 9)
   };
 }
   
@@ -541,15 +535,22 @@ async function loadSaldo() {
 // =============================================
 function renderSaldo(data) {
   const tbody = document.getElementById('tbody-saldo');
-  if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin registros</td></tr>'; return; }
+  if (!data.length) { 
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin registros</td></tr>'; 
+    return; 
+  }
+  
   const cols = getSaldoCols(Object.keys(data[0]));
   let html = '';
+  
   data.forEach(row => {
     const days = daysToExpiry(row[cols.expira]);
     const rowClass = days !== null && days < 0 ? 'text-error font-medium' : days !== null && days <= ALERT_DAYS ? 'text-secondary font-medium' : 'text-on-surface';
+    
     html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.whs]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (cols.lote_fisico ? (row[cols.lote_fisico]||'—') : '—') + '</td>'
@@ -567,7 +568,7 @@ function renderSaldo(data) {
 function renderAlertas(data) {
   const tbody = document.getElementById('tbody-alertas');
   if (!data.length) { 
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin datos</td></tr>'; 
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin datos</td></tr>'; 
     return; 
   }
   
@@ -576,14 +577,11 @@ function renderAlertas(data) {
   const alertas = data
     .map(row => ({ row, days: daysToExpiry(row[cols.expira]) }))
     .filter(x => {
-      // 1. Filtro de vencimiento (mantiene solo los que vencen en ALERT_DAYS o menos)
       const esCritico = (x.days !== null && x.days <= ALERT_DAYS);
       
-      // 2. Obtener ubicación y convertir a mayúsculas para comparar
-      const ubicacion = (x.row[cols.ubic] || '').toUpperCase();
-      
-      // 3. Excluir si la ubicación contiene "LF" o "OB"
-      const esExcluida = ubicacion.includes('LF') || ubicacion.includes('OB');
+      // AQUÍ ESTÁ EL CAMBIO: Ahora filtramos usando cols.whs
+      const valorWhs = (x.row[cols.whs] || '').toUpperCase();
+      const esExcluida = valorWhs.includes('LF') || valorWhs.includes('OB');
       
       return esCritico && !esExcluida;
     })
@@ -593,7 +591,7 @@ function renderAlertas(data) {
   document.getElementById('alert-badge').classList.toggle('hidden', alertas.length === 0);
 
   if (!alertas.length) {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="8" style="color:#2e7d32">Sin alertas criticas (excluyendo LF, OB)</td></tr>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9" style="color:#2e7d32">Sin alertas criticas</td></tr>';
     return;
   }
 
@@ -606,11 +604,12 @@ function renderAlertas(data) {
     html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.whs]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
-      + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (cols.lote_fisico ? (row[cols.lote_fisico]||'—') : '—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data font-bold border border-outline-variant">' + diasLabel + '</td>'
+      + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
       + '<td class="px-3 py-3 text-center border border-outline-variant">' + badge + '</td>'
       + '</tr>';
   });

@@ -261,7 +261,6 @@
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">FECHA / HORA</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE BPCS</th>
-                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">UBIC. ORIGEN</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">UBIC. DESTINO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CANTIDAD</th>
@@ -446,15 +445,23 @@ function getSaldoCols(keys) {
 }
   
 function getMovCols(keys) {
+  // Depuración opcional: console.log("Cabeceras de movimientos:", keys);
+  
   return {
-    fecha:    detectCol(keys, [/fecha/i, /date/i, /hora/i, /time/i, /registro/i]) || keys[1], // Ajustado a columna REGISTRO
-    codigo:   detectCol(keys, [/^RBRPD$/i, /codigo/i, /sku/i, /item/i]) || keys[4],
-    bpcs:     detectCol(keys, [/bpcs/i, /rccus/i]) || keys[2],
-    lote:     detectCol(keys, [/^RBLOT$/i, /lote/i, /batch/i]) || keys[5],
-    origen:   detectCol(keys, [/^RFRLC$/i, /origen/i, /source/i, /from/i, /salida/i]) || keys[6],
-    destino:  detectCol(keys, [/^RIOLC$/i, /destino/i, /dest/i, /entrada/i, /hacia/i]) || keys[7],
-    cantidad: detectCol(keys, [/^RQTYT$/i, /cantidad/i, /cant/i, /qty/i]) || keys[8],
-    usuario:  detectCol(keys, [/^RCOM$/i, /usuario/i, /user/i, /operador/i]) || keys[12],
+    fecha:    detectCol(keys, [/fecha/i, /registro/i, /time/i]) || keys[1],
+    codigo:   detectCol(keys, [/^RBRPD$/i, /codigo/i]) || keys[5],
+    bpcs:     detectCol(keys, [/^RCCUS$/i, /bpcs/i]) || keys[2],
+    
+    // Dejamos lote como null o vacío ya que no existe en el origen
+    lote:     null, 
+    
+    origen:   detectCol(keys, [/^RFRLC$/i, /origen/i]) || keys[8],
+    
+    // CORRECCIÓN AQUÍ: Forzamos la detección exacta de RTOLC
+    destino:  detectCol(keys, [/^RTOLC$/i, /destino/i, /to/i]) || keys[9],
+    
+    cantidad: detectCol(keys, [/^RQTYT$/i, /cantidad/i, /qty/i]) || keys[7],
+    usuario:  detectCol(keys, [/^RCOM$/i, /usuario/i, /user/i]) || keys[12],
   };
 }
 
@@ -641,15 +648,18 @@ async function loadMov() {
 // =============================================
 function renderMov(data) {
   const tbody = document.getElementById('tbody-mov');
-  if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin movimientos registrados</td></tr>'; return; }
+  // Cambiamos a 7 porque eliminamos la columna LOTE
+  if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin movimientos registrados</td></tr>'; return; }
+  
   const cols = getMovCols(Object.keys(data[0]));
   let html = '';
+  
   data.forEach(row => {
     html += '<tr class="hover:bg-surface-container-low transition-colors">'
       + '<td class="px-3 py-3 font-label-data whitespace-nowrap border border-outline-variant">' + (row[cols.fecha]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.bpcs]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
+      // AQUÍ ELIMINAMOS LA LÍNEA DE (row[cols.lote])
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.origen]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.destino]||'—') + '</td>'
       + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'

@@ -671,27 +671,45 @@ function renderMov(data) {
 function updateKPIs(data) {
   if (!data.length) return;
   const cols = getSaldoCols(Object.keys(data[0]));
-  // DEBUG: mostrar en consola qué columna se detectó y los primeros valores
-  console.log('[KPI DEBUG] Columnas detectadas:', cols);
-  console.log('[KPI DEBUG] Primeras 3 filas - columna cantidad:', data.slice(0,3).map(r => r[cols.cantidad]));
-  console.log('[KPI DEBUG] Todas las keys del sheet:', Object.keys(data[0]));
+  
   let total = 0, vencidos = 0;
+  
   data.forEach(row => {
-    const rawQty = (row[cols.cantidad]||'0').trim();
-    // Soporta formatos: 1234 / 1.234 / 1,234 / 1.234,56 / 1,234.56
-    let qty = 0;
-    if (rawQty !== '') {
-      // Si tiene coma decimal estilo europeo (ej: 1.234,56)
-      let normalized = rawQty.replace(/\./g,'').replace(',','.');
-      qty = parseFloat(normalized) || 0;
+    // 1. Obtenemos el valor crudo de la columna cantidad
+    let rawQty = (row[cols.cantidad] || '0').toString().trim();
+    
+    // 2. Limpieza total: eliminamos cualquier carácter que no sea número, punto o coma
+    // Esto evita errores con espacios, símbolos o formatos extraños
+    let cleanQty = rawQty.replace(/[^\d.,]/g, '');
+    
+    // 3. Normalización:
+    // Si hay una coma y un punto (ej: 25.308,05), el punto es miles, quitamos el punto
+    if (cleanQty.includes(',') && cleanQty.includes('.')) {
+      cleanQty = cleanQty.replace(/\./g, '').replace(',', '.');
+    } 
+    // Si solo hay coma decimal (ej: 1234,56), la cambiamos a punto para parseFloat
+    else if (cleanQty.includes(',')) {
+      cleanQty = cleanQty.replace(',', '.');
     }
+    // Si solo hay puntos (ej: 25.308.055), eliminamos todos los puntos
+    else {
+      cleanQty = cleanQty.replace(/\./g, '');
+    }
+    
+    // 4. Convertimos a número
+    let qty = parseFloat(cleanQty) || 0;
+    
     total += qty;
+    
+    // 5. Cálculo de vencidos (mantenemos tu lógica de días)
     const d = daysToExpiry(row[cols.expira]);
     if (d !== null && d < 0) vencidos += qty;
   });
-  document.getElementById('kpi-total').textContent = total.toLocaleString();
-  document.getElementById('kpi-disponible').textContent = (total - vencidos).toLocaleString();
-  document.getElementById('kpi-bajas').textContent = vencidos.toLocaleString();
+  
+  // 6. Actualización de vista (redondeado para evitar decimales extraños en el UI)
+  document.getElementById('kpi-total').textContent = Math.round(total).toLocaleString('es-PE');
+  document.getElementById('kpi-disponible').textContent = Math.round(total - vencidos).toLocaleString('es-PE');
+  document.getElementById('kpi-bajas').textContent = Math.round(vencidos).toLocaleString('es-PE');
 }
 
 // =============================================

@@ -434,17 +434,14 @@ function getSaldoCols(keys) {
   const colSaldo = keys.find(k => k.trim().toLowerCase() === "saldo");
   
   return {
-    codigo:   detectCol(keys, [/^cod/i, /sku/i, /item/i]) || keys[0],
-    desc:     detectCol(keys, [/desc/i, /nombre/i]) || keys[1],
-    whs:      detectCol(keys, [/whs/i]) || keys[2], 
-    ubic:     detectCol(keys, [/ubic/i, /loc/i]) || keys[3], 
-    
-    // Separamos los lotes explícitamente
+    codigo:      detectCol(keys, [/^cod/i, /sku/i, /item/i]) || keys[0],
+    desc:        detectCol(keys, [/desc/i, /nombre/i]) || keys[1],
+    whs:         detectCol(keys, [/whs/i]) || keys[2], 
+    ubic:        detectCol(keys, [/ubic/i, /loc/i]) || keys[3], 
     lote_bpcs:   detectCol(keys, [/lote bpcs/i]),
     lote_fisico: detectCol(keys, [/lote fisico/i]),
-    
-    expira:   detectCol(keys, [/expir/i, /fecha/i]) || keys[5],
-    cantidad: detectCol(keys, [/saldo/i, /cantidad/i]) || keys[9]
+    expira:      detectCol(keys, [/expir/i, /fecha/i]) || keys[5],
+    cantidad:    detectCol(keys, [/saldo/i, /cantidad/i]) || keys[9]
   };
 }
   
@@ -560,8 +557,8 @@ function renderSaldo(data) {
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.whs]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (cols.lote_fisico ? (row[cols.lote_fisico]||'—') : '—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote_bpcs]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote_fisico]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
       + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
       + '<td class="px-3 py-3 text-center border border-outline-variant">' + statusBadge(days) + '</td>'
@@ -575,7 +572,7 @@ function renderSaldo(data) {
 // =============================================
 function renderAlertas(data) {
   const tbody = document.getElementById('tbody-alertas');
-  // Ajustado a 8 columnas
+  
   if (!data.length) { 
     tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin alertas criticas</td></tr>'; 
     return; 
@@ -593,6 +590,7 @@ function renderAlertas(data) {
     })
     .sort((a, b) => a.days - b.days);
 
+  // Actualizar KPI y badge superior
   document.getElementById('kpi-alertas').textContent = alertas.length.toLocaleString();
   document.getElementById('alert-badge').classList.toggle('hidden', alertas.length === 0);
 
@@ -610,7 +608,7 @@ function renderAlertas(data) {
     html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote_fisico]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'

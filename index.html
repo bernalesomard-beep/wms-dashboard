@@ -468,10 +468,19 @@ function getMovCols(keys) {
 // CALCULAR DIAS HASTA VENCIMIENTO
 // =============================================
 function daysToExpiry(str) {
-  if (!str) return null;
-  const s = str.trim();
+  if (!str || str === '0') return null; // Ignora ceros o celdas vacías
+  const s = String(str).trim();
   let d;
-  if (/^\d{2}\/\d{2}\/\d{2}$/.test(s)) {
+
+  // NUEVO: Soporte para formato YYYYMMDD (como 20230428)
+  if (/^\d{8}$/.test(s)) {
+    const yyyy = s.substring(0, 4);
+    const mm = s.substring(4, 6);
+    const dd = s.substring(6, 8);
+    d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
+  } 
+  // Formatos anteriores (dd/mm/yy o dd/mm/yyyy)
+  else if (/^\d{2}\/\d{2}\/\d{2}$/.test(s)) {
     const [dd, mm, yy] = s.split('/');
     d = new Date(2000 + parseInt(yy), parseInt(mm) - 1, parseInt(dd));
   } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
@@ -480,8 +489,12 @@ function daysToExpiry(str) {
   } else {
     d = new Date(s);
   }
-  if (!d || isNaN(d)) return null;
-  const today = new Date(); today.setHours(0,0,0,0);
+
+  if (!d || isNaN(d.getTime())) return null;
+  
+  const today = new Date(); 
+  today.setHours(0, 0, 0, 0);
+  // Calcula la diferencia en días
   return Math.floor((d - today) / 86400000);
 }
 

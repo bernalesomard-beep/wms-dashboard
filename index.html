@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html class="light" lang="es">
 <head>
 <meta charset="utf-8">
@@ -212,13 +212,14 @@
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">UBICACION</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE BPCS</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">EXPIRA</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CANTIDAD</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">ESTADO</th>
               </tr>
             </thead>
             <tbody id="tbody-saldo">
-              <tr class="loading-row"><td colspan="7"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando datos desde Google Sheets...</td></tr>
+              <tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando datos desde Google Sheets...</td></tr>
             </tbody>
           </table>
         </div>
@@ -429,26 +430,29 @@ function detectCol(keys, patterns) {
 }
 
 function getSaldoCols(keys) {
+  const loteBpcs = detectCol(keys, [/bpcs/i]) || null;
+  const loteFisico = keys.find(k => /lote/i.test(k) && k !== loteBpcs) || null;
   return {
-    codigo:   detectCol(keys, [/^cod/i, /sku/i, /item/i, /articul/i]) || keys[0],
-    desc:     detectCol(keys, [/desc/i, /nombre/i, /product/i, /name/i]) || keys[1],
-    ubic:     detectCol(keys, [/ubic/i, /loc/i, /rack/i, /posic/i]) || keys[2],
-    lote:     detectCol(keys, [/lote/i, /batch/i, /bpcs/i]) || keys[3],
-    expira:   detectCol(keys, [/expir/i, /venc/i, /caduc/i, /fecha/i, /date/i]) || keys[4],
-    cantidad: detectCol(keys, [/cant/i, /qty/i, /stock/i, /saldo/i, /quantity/i]) || keys[5],
+    codigo:      detectCol(keys, [/^cod/i, /sku/i, /item/i, /articul/i]) || keys[0],
+    desc:        detectCol(keys, [/desc/i, /nombre/i, /product/i, /name/i]) || keys[1],
+    ubic:        detectCol(keys, [/ubic/i, /loc/i, /rack/i, /posic/i]) || keys[2],
+    lote:        loteBpcs || detectCol(keys, [/lote/i, /batch/i]) || keys[3],
+    lote_fisico: loteFisico,
+    expira:      detectCol(keys, [/expir/i, /venc/i, /caduc/i, /fecha/i, /date/i]) || keys[4],
+    cantidad:    detectCol(keys, [/cant/i, /qty/i, /stock/i, /saldo/i, /quantity/i]) || keys[5],
   };
 }
 
 function getMovCols(keys) {
   return {
     fecha:    detectCol(keys, [/fecha/i, /date/i, /hora/i, /time/i]) || keys[0],
-    codigo:   detectCol(keys, [/^cod/i, /sku/i, /item/i, /articul/i]) || keys[1],
+    codigo:   detectCol(keys, [/^rbrpd$/i, /^cod/i, /sku/i, /item/i, /articul/i]) || keys[1],
     bpcs:     detectCol(keys, [/bpcs/i]) || keys[2],
-    lote:     detectCol(keys, [/lote/i, /batch/i]) || keys[3],
-    origen:   detectCol(keys, [/origen/i, /source/i, /from/i, /salida/i]) || keys[4],
-    destino:  detectCol(keys, [/destino/i, /dest/i, /entrada/i, /hacia/i]) || keys[5],
-    cantidad: detectCol(keys, [/cant/i, /qty/i, /quantity/i]) || keys[6],
-    usuario:  detectCol(keys, [/usuario/i, /user/i, /operador/i, /resp/i]) || keys[7],
+    lote:     detectCol(keys, [/^rblot$/i, /lote/i, /batch/i]) || keys[3],
+    origen:   detectCol(keys, [/^rfrlc$/i, /origen/i, /source/i, /from/i, /salida/i]) || keys[4],
+    destino:  detectCol(keys, [/^riolc$/i, /destino/i, /dest/i, /entrada/i, /hacia/i]) || keys[5],
+    cantidad: detectCol(keys, [/^rqty$/i, /cant/i, /qty/i, /quantity/i]) || keys[6],
+    usuario:  detectCol(keys, [/^rcom$/i, /usuario/i, /user/i, /operador/i, /resp/i]) || keys[7],
   };
 }
 
@@ -488,7 +492,7 @@ function statusBadge(days) {
 async function loadSaldo() {
   const btn = document.getElementById('btn-saldo');
   btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
-  document.getElementById('tbody-saldo').innerHTML = '<tr class="loading-row"><td colspan="7"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
+  document.getElementById('tbody-saldo').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
   document.getElementById('tbody-alertas').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando alertas...</td></tr>';
 
   try {
@@ -504,7 +508,7 @@ async function loadSaldo() {
     document.getElementById('last-update-alertas').textContent = t;
     document.getElementById('last-update-global').textContent = t;
   } catch(e) {
-    const msg = '<tr class="error-row"><td colspan="7">Error al cargar: ' + e.message + '. Verifica que el sheet sea publico.</td></tr>';
+    const msg = '<tr class="error-row"><td colspan="8">Error al cargar: ' + e.message + '. Verifica que el sheet sea publico.</td></tr>';
     document.getElementById('tbody-saldo').innerHTML = msg;
     document.getElementById('tbody-alertas').innerHTML = '<tr class="error-row"><td colspan="8">Error al cargar alertas</td></tr>';
   }
@@ -516,7 +520,7 @@ async function loadSaldo() {
 // =============================================
 function renderSaldo(data) {
   const tbody = document.getElementById('tbody-saldo');
-  if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin registros</td></tr>'; return; }
+  if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin registros</td></tr>'; return; }
   const cols = getSaldoCols(Object.keys(data[0]));
   let html = '';
   data.forEach(row => {
@@ -527,6 +531,7 @@ function renderSaldo(data) {
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (cols.lote_fisico ? (row[cols.lote_fisico]||'—') : '—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
       + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
       + '<td class="px-3 py-3 text-center border border-outline-variant">' + statusBadge(days) + '</td>'
@@ -626,7 +631,7 @@ function updateKPIs(data) {
   const cols = getSaldoCols(Object.keys(data[0]));
   let total = 0, vencidos = 0;
   data.forEach(row => {
-    const qty = parseInt(row[cols.cantidad]) || 0;
+    const qty = parseFloat((row[cols.cantidad]||'0').replace(/[^0-9.\-]/g,'')) || 0;
     total += qty;
     const d = daysToExpiry(row[cols.expira]);
     if (d !== null && d < 0) vencidos += qty;

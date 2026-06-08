@@ -439,9 +439,13 @@ function getSaldoCols(keys) {
     desc:     detectCol(keys, [/desc/i, /nombre/i]) || keys[1],
     whs:      detectCol(keys, [/whs/i]) || keys[2], 
     ubic:     detectCol(keys, [/ubic/i, /loc/i]) || keys[3], 
-    lote:     loteBpcs || detectCol(keys, [/lote/i]) || keys[4],
+    
+    // Separamos los lotes explícitamente
+    lote_bpcs:   detectCol(keys, [/lote bpcs/i]),
+    lote_fisico: detectCol(keys, [/lote fisico/i]),
+    
     expira:   detectCol(keys, [/expir/i, /fecha/i]) || keys[5],
-    cantidad: colSaldo || keys[9], // Asegúrate que la columna Saldo sea realmente la 10ma (índice 9)
+    cantidad: detectCol(keys, [/saldo/i, /cantidad/i]) || keys[9]
   };
 }
   

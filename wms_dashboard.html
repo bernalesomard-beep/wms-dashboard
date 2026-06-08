@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Salon Logic WMS - Dashboard de Inventario</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "primary-container": "#2d5a5a","on-error-container": "#93000a","surface-variant": "#e1e3e4",
+          "surface-tint": "#396666","primary-fixed": "#bcebeb","inverse-on-surface": "#f0f1f2",
+          "on-primary-fixed": "#002020","surface-container-high": "#e7e8e9","on-secondary": "#ffffff",
+          "on-background": "#191c1d","surface-dim": "#d9dadb","surface-bright": "#f8f9fa",
+          "background": "#f8f9fa","secondary-fixed-dim": "#dfbbe4","on-primary-container": "#a1cfcf",
+          "on-secondary-fixed": "#2a1231","surface": "#f8f9fa","error": "#ba1a1a","on-error": "#ffffff",
+          "inverse-surface": "#2e3132","primary-fixed-dim": "#a1cfcf","primary": "#124343",
+          "outline-variant": "#c0c8c7","surface-container-lowest": "#ffffff","on-surface-variant": "#404848",
+          "inverse-primary": "#a1cfcf","tertiary-container": "#734934","secondary-fixed": "#fbd7ff",
+          "secondary": "#725478","surface-container": "#edeeef","on-secondary-container": "#76587c",
+          "tertiary-fixed": "#ffdbcb","secondary-container": "#f9d4fe","outline": "#707978",
+          "on-tertiary": "#ffffff","error-container": "#ffdad6","surface-container-highest": "#e1e3e4",
+          "tertiary": "#58331f","surface-container-low": "#f3f4f5","on-primary": "#ffffff","on-surface": "#191c1d"
+        },
+        "fontFamily": {
+          "table-header": ["Hanken Grotesk"],"headline-lg": ["Hanken Grotesk"],"body-md": ["Hanken Grotesk"],
+          "body-lg": ["Hanken Grotesk"],"body-sm": ["Hanken Grotesk"],"label-data": ["JetBrains Mono"],
+          "headline-md": ["Hanken Grotesk"]
+        },
+        "fontSize": {
+          "table-header": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+          "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+          "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+          "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+          "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+          "label-data": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+          "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  body { font-family: 'Hanken Grotesk', sans-serif; }
+  .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #124343; border-radius: 10px; border: 2px solid #f1f1f1; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #2d5a5a; }
+  thead th { position: sticky; top: 0; z-index: 10; background-color: #124343; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 1s linear infinite; }
+  .loading-row td { text-align: center; padding: 2rem; color: #707978; font-family: 'Hanken Grotesk', sans-serif; }
+  .error-row td { text-align: center; padding: 2rem; color: #ba1a1a; font-family: 'Hanken Grotesk', sans-serif; }
+  .last-update { font-size: 11px; color: #707978; font-family: 'JetBrains Mono', monospace; }
+  .badge-ok { background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+  .badge-warn { background: #fff8e1; color: #f57f17; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+  .badge-error { background: #ffebee; color: #ba1a1a; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+  .auto-dot { width:8px; height:8px; border-radius:50%; background:#2e7d32; display:inline-block; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+</head>
+<body class="bg-background text-on-background">
+
+<!-- SideNavBar -->
+<aside class="h-screen fixed left-0 top-0 bg-surface border-r border-outline-variant flex flex-col py-8 z-50 w-40">
+  <div class="px-6 mb-10 flex flex-col items-center gap-2">
+    <div class="w-10 h-10 flex items-center justify-center rounded-lg overflow-hidden">
+      <img alt="Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4NJMHsdDlCg52Ed-P7Bo9t37SoLculsDk4KdYXQhHemRTogxYJNjhTr76JWZ2w9Uwkw7nSEQ9hVWVm4b20NK7QLxgHJvsKk_Vjm8xdHC7-XkqmeUOTuxi52Kb_W_MqJvRi667SqA33Ex--nVyZ-5xua_PcW9Ps3Ta36tI9rid285R6OtPAquWsrHu5VGmij2ABJ0THXPxPz5XDRMolTUzKQEhqlVPgddeGmCKTWfWFuQq-HfO-7r9H512MSPYThjnYpY">
+    </div>
+    <div class="text-center">
+      <h1 class="font-headline-md text-[18px] text-primary leading-none">Omar Bernales</h1>
+      <p class="font-body-sm text-[10px] text-on-surface-variant opacity-70">Odan89</p>
+    </div>
+  </div>
+  <nav class="flex-1 space-y-1 px-2">
+    <a class="flex flex-col items-center gap-1 px-2 py-3 text-primary font-bold border-r-4 border-primary bg-primary-container/10 transition-colors duration-200" href="#">
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="font-body-sm text-[11px]">Dashboard</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200" href="#">
+      <span class="material-symbols-outlined">inventory_2</span><span class="font-body-sm text-[11px]">Saldo</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200" href="#">
+      <span class="material-symbols-outlined">history</span><span class="font-body-sm text-[11px]">Movimiento</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200" href="#">
+      <span class="material-symbols-outlined">trending_down</span><span class="font-body-sm text-[11px]">Reporte de Bajas</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- TopNavBar -->
+<header class="flex justify-between items-center h-16 px-8 bg-surface border-b border-surface-variant fixed top-0 z-40 w-[calc(100%-10rem)] ml-40">
+  <div class="flex items-center gap-4 flex-1">
+    <div class="relative w-full max-w-md">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary">search</span>
+      <input id="global-search" class="w-full bg-surface-container-low rounded-lg pl-10 pr-4 py-2 font-body-md focus:ring-2 focus:ring-primary outline-none transition-all border-primary border-2" placeholder="Filtrar por producto, lote o ubicacion...">
+    </div>
+  </div>
+  <div class="flex items-center gap-6">
+    <div class="flex items-center gap-4 border-r border-outline-variant pr-6">
+      <button class="relative text-on-surface-variant hover:text-primary transition-all">
+        <span class="material-symbols-outlined">notifications</span>
+        <span id="alert-badge" class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full hidden"></span>
+      </button>
+      <button class="text-on-surface-variant hover:text-primary transition-all">
+        <span class="material-symbols-outlined">account_circle</span>
+      </button>
+    </div>
+    <div class="font-headline-md text-headline-md font-bold text-primary">DERMODIS APPSHEET</div>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="mt-16 p-8 bg-background min-h-[calc(100vh-64px)] ml-40">
+
+  <!-- Header -->
+  <div class="mb-8 flex justify-between items-end flex-wrap gap-2">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-primary mb-1">Resumen de Saldo (Stock)</h2>
+      <p class="font-body-md text-body-md text-on-surface-variant">Estado actual de stock y movimientos logisticos.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="auto-dot"></span>
+      <span class="last-update" id="last-update-global">Iniciando auto-actualizacion cada 60s...</span>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant hover:border-primary transition-colors group">
+      <div class="flex justify-between items-start mb-4">
+        <div class="p-2 bg-primary-container/10 rounded-lg group-hover:bg-primary-container/20 transition-colors">
+          <span class="material-symbols-outlined text-primary">inventory_2</span>
+        </div>
+        <span class="font-bold text-primary uppercase" style="font-size:1.1rem;">STOCK TOTAL</span>
+      </div>
+      <div class="text-center mt-6">
+        <p class="font-headline-lg text-headline-lg font-bold" id="kpi-total">—</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant hover:border-primary transition-colors group">
+      <div class="flex justify-between items-start mb-4">
+        <div class="p-2 bg-primary-container/10 rounded-lg group-hover:bg-primary-container/20 transition-colors">
+          <span class="material-symbols-outlined text-primary">check_circle</span>
+        </div>
+        <span class="font-bold text-primary uppercase" style="font-size:1.1rem;">DISPONIBLE</span>
+      </div>
+      <div class="text-center mt-6">
+        <p class="font-headline-lg text-headline-lg font-bold" id="kpi-disponible">—</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant hover:border-error transition-colors group">
+      <div class="flex justify-between items-start mb-4">
+        <div class="p-2 bg-error-container/20 rounded-lg group-hover:bg-error-container/30 transition-colors">
+          <span class="material-symbols-outlined text-error">warning</span>
+        </div>
+        <span class="font-bold text-error uppercase" style="font-size:1.1rem;">VENCIDOS</span>
+      </div>
+      <div class="text-center mt-6">
+        <p class="font-headline-lg text-headline-lg font-bold" id="kpi-bajas">—</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant hover:border-secondary transition-colors group">
+      <div class="flex justify-between items-start mb-4">
+        <div class="p-2 bg-secondary-container/30 rounded-lg group-hover:bg-secondary-container/40 transition-colors">
+          <span class="material-symbols-outlined text-secondary">visibility</span>
+        </div>
+        <span class="font-bold text-secondary uppercase" style="font-size:1.1rem;">ALERTAS</span>
+      </div>
+      <div class="text-center mt-6">
+        <p class="font-headline-lg text-headline-lg font-bold" id="kpi-alertas">—</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="grid grid-cols-12 gap-8">
+    <div class="col-span-12 lg:col-span-9 space-y-8">
+
+      <!-- TABLA SALDO -->
+      <div class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
+        <div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center flex-wrap gap-2">
+          <div>
+            <h3 class="font-headline-md text-headline-md text-primary">Saldo de Inventario</h3>
+            <span class="last-update" id="last-update-saldo"></span>
+          </div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <button onclick="exportCSV('saldo')" class="flex items-center gap-1 px-3 py-1 bg-surface border border-secondary text-secondary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors">
+              <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
+            </button>
+            <div class="relative flex items-center">
+              <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
+              <input id="search-saldo" oninput="filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Buscar...">
+            </div>
+            <button onclick="loadSaldo()" id="btn-saldo" class="flex items-center gap-1 text-primary font-bold text-body-sm hover:underline whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar
+            </button>
+          </div>
+        </div>
+        <div class="overflow-y-auto max-h-[400px] custom-scrollbar">
+          <table class="w-full border-collapse border border-outline-variant">
+            <thead>
+              <tr class="bg-primary text-white">
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">UBICACION</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE BPCS</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">EXPIRA</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CANTIDAD</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">ESTADO</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-saldo">
+              <tr class="loading-row"><td colspan="7"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando datos desde Google Sheets...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TABLA MOVIMIENTOS -->
+      <div class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
+        <div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center flex-wrap gap-2">
+          <div>
+            <h3 class="font-headline-md text-headline-md text-primary">Movimientos</h3>
+            <span class="last-update" id="last-update-mov"></span>
+          </div>
+          <div class="flex items-center gap-3 flex-wrap justify-end">
+            <div class="flex items-center gap-2">
+              <label class="font-body-sm text-on-surface-variant text-[12px]">Desde:</label>
+              <input id="fecha-desde" oninput="filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-2 py-1 focus:ring-1 focus:ring-primary outline-none" type="date">
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="font-body-sm text-on-surface-variant text-[12px]">Hasta:</label>
+              <input id="fecha-hasta" oninput="filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-2 py-1 focus:ring-1 focus:ring-primary outline-none" type="date">
+            </div>
+            <button onclick="exportCSV('mov')" class="flex items-center gap-1 px-3 py-1 bg-surface border border-secondary text-secondary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors">
+              <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
+            </button>
+            <div class="relative flex items-center">
+              <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
+              <input id="search-mov" oninput="filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Buscar...">
+            </div>
+            <button onclick="loadMov()" id="btn-mov" class="flex items-center gap-1 text-primary font-bold text-body-sm hover:underline whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar
+            </button>
+          </div>
+        </div>
+        <div class="overflow-y-auto max-h-[400px] custom-scrollbar">
+          <table class="w-full border-collapse border border-outline-variant">
+            <thead>
+              <tr class="bg-primary text-white">
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">FECHA / HORA</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE BPCS</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">UBIC. ORIGEN</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">UBIC. DESTINO</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CANTIDAD</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">USUARIO</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-mov">
+              <tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando datos desde Google Sheets...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TABLA ALERTAS -->
+      <div class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
+        <div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center flex-wrap gap-2">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary">notification_important</span>
+            <div>
+              <h3 class="font-headline-md text-headline-md text-primary">Alertas de Vencimiento Criticas</h3>
+              <span class="last-update" id="last-update-alertas"></span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <button onclick="exportCSV('alertas')" class="flex items-center gap-1 px-3 py-1 bg-surface border border-secondary text-secondary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors">
+              <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
+            </button>
+            <div class="relative flex items-center">
+              <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
+              <input id="search-alertas" oninput="filterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Buscar...">
+            </div>
+            <button onclick="loadSaldo()" id="btn-alertas" class="flex items-center gap-1 text-primary font-bold text-body-sm hover:underline whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar
+            </button>
+          </div>
+        </div>
+        <div class="overflow-y-auto max-h-[400px] custom-scrollbar">
+          <table class="w-full border-collapse border border-outline-variant">
+            <thead>
+              <tr class="bg-primary text-white">
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">UBICACION</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CANTIDAD</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">FECHA VENCE</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DIAS REST.</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">ESTADO</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-alertas">
+              <tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-span-12 lg:col-span-3 space-y-8">
+      <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant">
+        <h3 class="font-headline-md text-[18px] text-primary mb-4">Estado de Lotes</h3>
+        <div class="relative w-36 h-36 mx-auto mb-6">
+          <canvas id="donut-chart" width="144" height="144"></canvas>
+          <div class="absolute inset-4 bg-surface-container-lowest rounded-full flex flex-col items-center justify-center pointer-events-none">
+            <span class="font-headline-md text-[20px] font-bold" id="donut-pct">—</span>
+            <span class="font-body-sm text-[10px] text-on-surface-variant">Vigentes</span>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-[13px]">
+            <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-primary"></div><span>Vigentes</span></div>
+            <span class="font-label-data" id="legend-vigentes">—</span>
+          </div>
+          <div class="flex items-center justify-between text-[13px]">
+            <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-secondary"></div><span>Por Vencer</span></div>
+            <span class="font-label-data" id="legend-cercanos">—</span>
+          </div>
+          <div class="flex items-center justify-between text-[13px]">
+            <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-error"></div><span>Vencidos</span></div>
+            <span class="font-label-data" id="legend-vencidos">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- FAB -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-50">
+  <span class="material-symbols-outlined text-[28px]">barcode_scanner</span>
+</button>
+
+<script>
+// =============================================
+// CONFIGURACION
+// =============================================
+const URL_SALDO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=273620597&single=true&output=csv';
+const URL_MOV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=2101441845&single=true&output=csv';
+const ALERT_DAYS = 30;
+
+// Proxy para evitar CORS al abrir el archivo localmente
+function proxyURL(url) {
+  return 'https://api.allorigins.win/get?url=' + encodeURIComponent(url) + '&t=' + Date.now();
+}
+
+async function fetchCSV(url) {
+  // Intento 1: directo (funciona si está en servidor web)
+  try {
+    const r = await fetch(url + '&t=' + Date.now());
+    if (r.ok) return await r.text();
+  } catch(e) { /* CORS bloqueado, usar proxy */ }
+
+  // Intento 2: via proxy allorigins
+  const r2 = await fetch(proxyURL(url));
+  if (!r2.ok) throw new Error('HTTP ' + r2.status);
+  const json = await r2.json();
+  return json.contents;
+}
+
+let dataSaldo = [];
+let dataMov   = [];
+
+// =============================================
+// PARSE CSV (manejo de comillas y comas)
+// =============================================
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return { headers: [], rows: [] };
+  const parseRow = (line) => {
+    const result = []; let inQ = false, cur = '';
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') { inQ = !inQ; }
+      else if (line[i] === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+      else { cur += line[i]; }
+    }
+    result.push(cur.trim());
+    return result;
+  };
+  const headers = parseRow(lines[0]);
+  const rows = lines.slice(1).map(l => parseRow(l));
+  return { headers, rows };
+}
+
+function toObjects(headers, rows) {
+  return rows.map(r => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (r[i] || '').trim());
+    return obj;
+  }).filter(o => Object.values(o).some(v => v !== ''));
+}
+
+function ts() {
+  return 'Actualizado: ' + new Date().toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// =============================================
+// DETECCION AUTOMATICA DE COLUMNAS
+// =============================================
+function detectCol(keys, patterns) {
+  for (const pat of patterns) {
+    const found = keys.find(k => pat.test(k));
+    if (found) return found;
+  }
+  return null;
+}
+
+function getSaldoCols(keys) {
+  return {
+    codigo:   detectCol(keys, [/^cod/i, /sku/i, /item/i, /articul/i]) || keys[0],
+    desc:     detectCol(keys, [/desc/i, /nombre/i, /product/i, /name/i]) || keys[1],
+    ubic:     detectCol(keys, [/ubic/i, /loc/i, /rack/i, /posic/i]) || keys[2],
+    lote:     detectCol(keys, [/lote/i, /batch/i, /bpcs/i]) || keys[3],
+    expira:   detectCol(keys, [/expir/i, /venc/i, /caduc/i, /fecha/i, /date/i]) || keys[4],
+    cantidad: detectCol(keys, [/cant/i, /qty/i, /stock/i, /saldo/i, /quantity/i]) || keys[5],
+  };
+}
+
+function getMovCols(keys) {
+  return {
+    fecha:    detectCol(keys, [/fecha/i, /date/i, /hora/i, /time/i]) || keys[0],
+    codigo:   detectCol(keys, [/^cod/i, /sku/i, /item/i, /articul/i]) || keys[1],
+    bpcs:     detectCol(keys, [/bpcs/i]) || keys[2],
+    lote:     detectCol(keys, [/lote/i, /batch/i]) || keys[3],
+    origen:   detectCol(keys, [/origen/i, /source/i, /from/i, /salida/i]) || keys[4],
+    destino:  detectCol(keys, [/destino/i, /dest/i, /entrada/i, /hacia/i]) || keys[5],
+    cantidad: detectCol(keys, [/cant/i, /qty/i, /quantity/i]) || keys[6],
+    usuario:  detectCol(keys, [/usuario/i, /user/i, /operador/i, /resp/i]) || keys[7],
+  };
+}
+
+// =============================================
+// CALCULAR DIAS HASTA VENCIMIENTO
+// =============================================
+function daysToExpiry(str) {
+  if (!str) return null;
+  const s = str.trim();
+  let d;
+  if (/^\d{2}\/\d{2}\/\d{2}$/.test(s)) {
+    const [dd, mm, yy] = s.split('/');
+    d = new Date(2000 + parseInt(yy), parseInt(mm) - 1, parseInt(dd));
+  } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    const [dd, mm, yyyy] = s.split('/');
+    d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
+  } else {
+    d = new Date(s);
+  }
+  if (!d || isNaN(d)) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.floor((d - today) / 86400000);
+}
+
+function statusBadge(days) {
+  if (days === null) return '<span style="color:#707978;font-size:11px;">—</span>';
+  if (days < 0)  return '<span class="badge-error">VENCIDO</span>';
+  if (days === 0) return '<span class="badge-error">HOY</span>';
+  if (days <= 7)  return '<span class="badge-error">⚠ ' + days + 'd</span>';
+  if (days <= ALERT_DAYS) return '<span class="badge-warn">⚡ ' + days + 'd</span>';
+  return '<span class="badge-ok">OK</span>';
+}
+
+// =============================================
+// CARGAR SALDO
+// =============================================
+async function loadSaldo() {
+  const btn = document.getElementById('btn-saldo');
+  btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
+  document.getElementById('tbody-saldo').innerHTML = '<tr class="loading-row"><td colspan="7"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
+  document.getElementById('tbody-alertas').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando alertas...</td></tr>';
+
+  try {
+    const text = await fetchCSV(URL_SALDO);
+    const { headers, rows } = parseCSV(text);
+    dataSaldo = toObjects(headers, rows);
+    renderSaldo(dataSaldo);
+    renderAlertas(dataSaldo);
+    updateKPIs(dataSaldo);
+    updateDonut(dataSaldo);
+    const t = ts();
+    document.getElementById('last-update-saldo').textContent = t;
+    document.getElementById('last-update-alertas').textContent = t;
+    document.getElementById('last-update-global').textContent = t;
+  } catch(e) {
+    const msg = '<tr class="error-row"><td colspan="7">Error al cargar: ' + e.message + '. Verifica que el sheet sea publico.</td></tr>';
+    document.getElementById('tbody-saldo').innerHTML = msg;
+    document.getElementById('tbody-alertas').innerHTML = '<tr class="error-row"><td colspan="8">Error al cargar alertas</td></tr>';
+  }
+  btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar';
+}
+
+// =============================================
+// RENDER SALDO
+// =============================================
+function renderSaldo(data) {
+  const tbody = document.getElementById('tbody-saldo');
+  if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin registros</td></tr>'; return; }
+  const cols = getSaldoCols(Object.keys(data[0]));
+  let html = '';
+  data.forEach(row => {
+    const days = daysToExpiry(row[cols.expira]);
+    const rowClass = days !== null && days < 0 ? 'text-error font-medium' : days !== null && days <= ALERT_DAYS ? 'text-secondary font-medium' : 'text-on-surface';
+    html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
+      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
+      + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
+      + '<td class="px-3 py-3 text-center border border-outline-variant">' + statusBadge(days) + '</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+// =============================================
+// RENDER ALERTAS
+// =============================================
+function renderAlertas(data) {
+  const tbody = document.getElementById('tbody-alertas');
+  if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin datos</td></tr>'; return; }
+  const cols = getSaldoCols(Object.keys(data[0]));
+
+  const alertas = data
+    .map(row => ({ row, days: daysToExpiry(row[cols.expira]) }))
+    .filter(x => x.days !== null && x.days <= ALERT_DAYS)
+    .sort((a, b) => a.days - b.days);
+
+  document.getElementById('kpi-alertas').textContent = alertas.length.toLocaleString();
+  document.getElementById('alert-badge').classList.toggle('hidden', alertas.length === 0);
+
+  if (!alertas.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8" style="color:#2e7d32">Sin alertas criticas de vencimiento en los proximos ' + ALERT_DAYS + ' dias</td></tr>';
+    return;
+  }
+
+  let html = '';
+  alertas.forEach(({ row, days }) => {
+    const rowClass = days <= 0 ? 'text-error font-medium' : 'text-secondary font-medium';
+    const diasLabel = days < 0 ? 'VENCIDO (' + Math.abs(days) + 'd)' : days === 0 ? 'HOY' : days + ' dias';
+    const badge = days <= 0 ? '<span class="badge-error">VENCIDO</span>' : days <= 7 ? '<span class="badge-error">CRITICO</span>' : '<span class="badge-warn">PROXIMO</span>';
+    html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
+      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
+      + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data font-bold border border-outline-variant">' + diasLabel + '</td>'
+      + '<td class="px-3 py-3 text-center border border-outline-variant">' + badge + '</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+// =============================================
+// CARGAR MOVIMIENTOS
+// =============================================
+async function loadMov() {
+  const btn = document.getElementById('btn-mov');
+  btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
+  document.getElementById('tbody-mov').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
+
+  try {
+    const text = await fetchCSV(URL_MOV);
+    const { headers, rows } = parseCSV(text);
+    dataMov = toObjects(headers, rows);
+    renderMov(dataMov);
+    document.getElementById('last-update-mov').textContent = ts();
+  } catch(e) {
+    document.getElementById('tbody-mov').innerHTML = '<tr class="error-row"><td colspan="8">Error al cargar movimientos: ' + e.message + '</td></tr>';
+  }
+  btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar';
+}
+
+// =============================================
+// RENDER MOVIMIENTOS
+// =============================================
+function renderMov(data) {
+  const tbody = document.getElementById('tbody-mov');
+  if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Sin movimientos registrados</td></tr>'; return; }
+  const cols = getMovCols(Object.keys(data[0]));
+  let html = '';
+  data.forEach(row => {
+    html += '<tr class="hover:bg-surface-container-low transition-colors">'
+      + '<td class="px-3 py-3 font-label-data whitespace-nowrap border border-outline-variant">' + (row[cols.fecha]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.bpcs]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote]||'—') + '</td>'
+      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.origen]||'—') + '</td>'
+      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.destino]||'—') + '</td>'
+      + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
+      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.usuario]||'—') + '</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+// =============================================
+// KPIs
+// =============================================
+function updateKPIs(data) {
+  if (!data.length) return;
+  const cols = getSaldoCols(Object.keys(data[0]));
+  let total = 0, vencidos = 0;
+  data.forEach(row => {
+    const qty = parseInt(row[cols.cantidad]) || 0;
+    total += qty;
+    const d = daysToExpiry(row[cols.expira]);
+    if (d !== null && d < 0) vencidos += qty;
+  });
+  document.getElementById('kpi-total').textContent = total.toLocaleString();
+  document.getElementById('kpi-disponible').textContent = (total - vencidos).toLocaleString();
+  document.getElementById('kpi-bajas').textContent = vencidos.toLocaleString();
+}
+
+// =============================================
+// DONUT CHART
+// =============================================
+function updateDonut(data) {
+  if (!data.length) return;
+  const cols = getSaldoCols(Object.keys(data[0]));
+  let vig = 0, prox = 0, venc = 0;
+  data.forEach(row => {
+    const d = daysToExpiry(row[cols.expira]);
+    if (d === null || d > ALERT_DAYS) vig++;
+    else if (d >= 0) prox++;
+    else venc++;
+  });
+  const total = vig + prox + venc || 1;
+  const pct = Math.round((vig / total) * 100);
+  document.getElementById('donut-pct').textContent = pct + '%';
+  document.getElementById('legend-vigentes').textContent = vig.toLocaleString();
+  document.getElementById('legend-cercanos').textContent = prox.toLocaleString();
+  document.getElementById('legend-vencidos').textContent = venc.toLocaleString();
+
+  const canvas = document.getElementById('donut-chart');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 144, 144);
+  const segs = [
+    { v: vig, c: '#124343' }, { v: prox, c: '#725478' }, { v: venc, c: '#ba1a1a' }
+  ];
+  let start = -Math.PI / 2;
+  segs.forEach(s => {
+    const sweep = (s.v / total) * 2 * Math.PI;
+    if (sweep === 0) return;
+    ctx.beginPath();
+    ctx.moveTo(72, 72);
+    ctx.arc(72, 72, 58, start, start + sweep);
+    ctx.closePath();
+    ctx.fillStyle = s.c;
+    ctx.fill();
+    start += sweep;
+  });
+  ctx.beginPath();
+  ctx.arc(72, 72, 40, 0, 2 * Math.PI);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+}
+
+// =============================================
+// FILTROS
+// =============================================
+function filterSaldo() {
+  const q = document.getElementById('search-saldo').value.toLowerCase();
+  if (!q) { renderSaldo(dataSaldo); return; }
+  renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
+}
+
+function filterMov() {
+  const q = document.getElementById('search-mov').value.toLowerCase();
+  let filtered = dataMov;
+  if (q) filtered = filtered.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q)));
+  renderMov(filtered);
+}
+
+function filterAlertas() {
+  const q = document.getElementById('search-alertas').value.toLowerCase();
+  if (!q) { renderAlertas(dataSaldo); return; }
+  renderAlertas(dataSaldo.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
+}
+
+// =============================================
+// BUSQUEDA GLOBAL
+// =============================================
+document.getElementById('global-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  if (!q) {
+    renderSaldo(dataSaldo);
+    renderMov(dataMov);
+    renderAlertas(dataSaldo);
+    return;
+  }
+  renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
+  renderMov(dataMov.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
+  renderAlertas(dataSaldo.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
+});
+
+// =============================================
+// EXPORTAR CSV
+// =============================================
+function exportCSV(type) {
+  let data, filename;
+  if (type === 'saldo') { data = dataSaldo; filename = 'saldo_inventario.csv'; }
+  else if (type === 'mov') { data = dataMov; filename = 'movimientos.csv'; }
+  else {
+    const cols = getSaldoCols(Object.keys(dataSaldo[0] || {}));
+    data = dataSaldo.filter(r => { const d = daysToExpiry(r[cols.expira]); return d !== null && d <= ALERT_DAYS; });
+    filename = 'alertas_vencimiento.csv';
+  }
+  if (!data.length) return;
+  const hdrs = Object.keys(data[0]);
+  const csv = [hdrs.join(','), ...data.map(r => hdrs.map(h => '"' + (r[h]||'') + '"').join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// =============================================
+// NAV ACTIVO
+// =============================================
+document.querySelectorAll('nav a').forEach(link => {
+  link.addEventListener('click', () => {
+    document.querySelectorAll('nav a').forEach(l => {
+      l.classList.remove('text-primary','font-bold','border-r-4','border-primary','bg-primary-container/10');
+      l.classList.add('text-on-surface-variant');
+    });
+    link.classList.add('text-primary','font-bold','border-r-4','border-primary','bg-primary-container/10');
+    link.classList.remove('text-on-surface-variant');
+  });
+});
+
+// =============================================
+// INICIO Y AUTO-REFRESH CADA 60 SEGUNDOS
+// =============================================
+loadSaldo();
+loadMov();
+setInterval(() => { loadSaldo(); loadMov(); }, 60000);
+</script>
+</body>
+</html>

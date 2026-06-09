@@ -314,8 +314,12 @@
               <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
             </button>
             <div class="relative flex items-center">
+              <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">warehouse</span>
+              <input id="filter-whs-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" oninput="filterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-28" placeholder="WHS...">
+            </div>
+            <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
-              <input id="search-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
+              <input id="search-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" oninput="filterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
             </div>
             <button onclick="filterAlertas()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
@@ -335,6 +339,7 @@
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">WHS</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">UBICACION</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CANTIDAD</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">FECHA VENCE</th>
@@ -343,7 +348,7 @@
               </tr>
             </thead>
             <tbody id="tbody-alertas">
-              <tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando...</td></tr>
+              <tr class="loading-row"><td colspan="9"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -745,7 +750,7 @@ function renderAlertas(data) {
   document.getElementById('alert-badge').classList.toggle('hidden', alertas.length === 0);
 
   if (!alertas.length) {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="8" style="color:#2e7d32">Sin alertas criticas</td></tr>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9" style="color:#2e7d32">Sin alertas criticas</td></tr>';
     return;
   }
 
@@ -759,6 +764,7 @@ function renderAlertas(data) {
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote_fisico]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.whs]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.ubic]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
@@ -1077,13 +1083,21 @@ function clearFilterMov() {
 
 function filterAlertas() {
   if (!dataSaldo.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
-  const q = document.getElementById('search-alertas').value.toLowerCase().trim();
-  if (!q) { renderAlertas(dataSaldo); return; }
-  renderAlertas(dataSaldo.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q))));
+  const q   = document.getElementById('search-alertas').value.toLowerCase().trim();
+  const whs = document.getElementById('filter-whs-alertas').value.toLowerCase().trim();
+
+  if (!q && !whs) { renderAlertas(dataSaldo); return; }
+
+  renderAlertas(dataSaldo.filter(r => {
+    const coincideTexto = !q  || Object.values(r).some(v => String(v).toLowerCase().includes(q));
+    const coincideWhs   = !whs || String(r[getSaldoCols(Object.keys(r)).whs] || '').toLowerCase().includes(whs);
+    return coincideTexto && coincideWhs;
+  }));
 }
 
 function clearFilterAlertas() {
   document.getElementById('search-alertas').value = '';
+  document.getElementById('filter-whs-alertas').value = '';
   renderAlertas(dataSaldo);
 }
 
@@ -1138,8 +1152,8 @@ function exportCSV(type) {
     data = rows.map(tr => {
       const tds = tr.querySelectorAll('td');
       return { codigo: tds[0]?.innerText, descripcion: tds[1]?.innerText, lote: tds[2]?.innerText,
-               ubicacion: tds[3]?.innerText, cantidad: tds[4]?.innerText, fecha_vence: tds[5]?.innerText,
-               dias_restantes: tds[6]?.innerText, estado: tds[7]?.innerText };
+               whs: tds[3]?.innerText, ubicacion: tds[4]?.innerText, cantidad: tds[5]?.innerText,
+               fecha_vence: tds[6]?.innerText, dias_restantes: tds[7]?.innerText, estado: tds[8]?.innerText };
     });
     filename = 'alertas_vencimiento.csv';
   } else if (type === 'bajas') {

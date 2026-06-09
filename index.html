@@ -63,6 +63,19 @@
   .badge-error { background: #ffebee; color: #ba1a1a; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .auto-dot { width:8px; height:8px; border-radius:50%; background:#2e7d32; display:inline-block; animation: pulse 2s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Cuando la sección activa es saldo o movimiento, la columna de tablas ocupa todo el ancho */
+  body[data-active="saldo"] .tables-col,
+  body[data-active="movimiento"] .tables-col {
+    grid-column: span 12 / span 12;
+  }
+  /* Scroll expandido en saldo/movimiento */
+  body[data-active="saldo"] .saldo-scroll,
+  body[data-active="saldo"] .mov-scroll,
+  body[data-active="movimiento"] .saldo-scroll,
+  body[data-active="movimiento"] .mov-scroll {
+    max-height: calc(100vh - 280px);
+  }
 </style>
 </head>
 <body class="bg-background text-on-background">
@@ -182,7 +195,7 @@
 
   <!-- Main Grid -->
   <div class="grid grid-cols-12 gap-8">
-    <div class="col-span-12 lg:col-span-9 space-y-8">
+    <div class="tables-col col-span-12 lg:col-span-9 space-y-8">
 
       <!-- TABLA SALDO -->
       <div data-section="dashboard saldo" class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
@@ -210,7 +223,7 @@
             </button>
           </div>
         </div>
-        <div class="overflow-y-auto max-h-[400px] custom-scrollbar">
+        <div class="saldo-scroll overflow-y-auto max-h-[400px] custom-scrollbar">
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
@@ -266,7 +279,7 @@
             </button>
           </div>
         </div>
-        <div class="overflow-y-auto max-h-[400px] custom-scrollbar">
+        <div class="mov-scroll overflow-y-auto max-h-[400px] custom-scrollbar">
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
@@ -339,7 +352,7 @@
     </div>
 
     <!-- Right Column -->
-    <div data-section="dashboard saldo movimiento" class="col-span-12 lg:col-span-3 space-y-8">
+    <div data-section="dashboard" class="col-span-12 lg:col-span-3 space-y-8">
       <div class="bg-surface-container-lowest p-5 rounded-lg border border-outline-variant">
         <h3 class="font-headline-md text-[18px] text-primary mb-4">Estado de Lotes</h3>
         <div class="relative w-36 h-36 mx-auto mb-6">
@@ -1120,6 +1133,15 @@ function exportCSV(type) {
       };
     });
     filename = 'movimientos_filtrados.csv';
+  } else if (type === 'alertas') {
+    const rows = Array.from(document.querySelectorAll('#tbody-alertas tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
+    data = rows.map(tr => {
+      const tds = tr.querySelectorAll('td');
+      return { codigo: tds[0]?.innerText, descripcion: tds[1]?.innerText, lote: tds[2]?.innerText,
+               ubicacion: tds[3]?.innerText, cantidad: tds[4]?.innerText, fecha_vence: tds[5]?.innerText,
+               dias_restantes: tds[6]?.innerText, estado: tds[7]?.innerText };
+    });
+    filename = 'alertas_vencimiento.csv';
   } else if (type === 'bajas') {
     const rows = Array.from(document.querySelectorAll('#tbody-bajas tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
     data = rows.map(tr => {
@@ -1147,6 +1169,9 @@ function exportCSV(type) {
 // NAVEGACIÓN POR SECCIONES
 // =============================================
 function showSection(section) {
+  // Marcar sección activa en body (para CSS)
+  document.body.setAttribute('data-active', section);
+
   // Actualizar nav activo
   document.querySelectorAll('nav a[data-nav]').forEach(l => {
     const isActive = l.getAttribute('data-nav') === section;

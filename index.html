@@ -460,6 +460,10 @@
             <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
           </button>
           <div class="relative flex items-center">
+            <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">place</span>
+            <input id="filter-destino-bajas" oninput="filterBajas()" onkeydown="if(event.key==='Enter')filterBajas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Ubic. Destino...">
+          </div>
+          <div class="relative flex items-center">
             <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
             <input id="search-bajas" onkeydown="if(event.key==='Enter')filterBajas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
           </div>
@@ -514,7 +518,7 @@
 const URL_SALDO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=273620597&single=true&output=csv';
 const URL_MOV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=2101441845&single=true&output=csv';
 const URL_BAJAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=868163741&single=true&output=csv';
-const ALERT_DAYS = 30;
+const ALERT_DAYS = 90;
 
 // Proxy para evitar CORS al abrir el archivo localmente
 function proxyURL(url) {
@@ -655,10 +659,10 @@ function daysToExpiry(str) {
 
 function statusBadge(days) {
   if (days === null) return '<span style="color:#707978;font-size:11px;">—</span>';
-  if (days < 0)  return '<span class="badge-error">VENCIDO</span>';
+  if (days < 0)   return '<span class="badge-error">VENCIDO</span>';
   if (days === 0) return '<span class="badge-error">HOY</span>';
-  if (days <= 7)  return '<span class="badge-error">⚠ ' + days + 'd</span>';
-  if (days <= ALERT_DAYS) return '<span class="badge-warn">⚡ ' + days + 'd</span>';
+  if (days <= 60) return '<span class="badge-error">⚠ ' + days + 'd</span>';
+  if (days <= 90) return '<span class="badge-warn">⚡ ' + days + 'd</span>';
   return '<span class="badge-ok">OK</span>';
 }
 
@@ -759,7 +763,7 @@ function renderAlertas(data) {
   alertas.forEach(({ row, days }) => {
     const rowClass = days <= 0 ? 'text-error font-medium' : 'text-secondary font-medium';
     const diasLabel = days < 0 ? 'VENCIDO (' + Math.abs(days) + 'd)' : days === 0 ? 'HOY' : days + ' dias';
-    const badge = days <= 0 ? '<span class="badge-error">VENCIDO</span>' : days <= 7 ? '<span class="badge-error">CRITICO</span>' : '<span class="badge-warn">PROXIMO</span>';
+    const badge = days <= 0 ? '<span class="badge-error">VENCIDO</span>' : days <= 60 ? '<span class="badge-error">CRITICO</span>' : '<span class="badge-warn">PROXIMO</span>';
     
     html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
@@ -1309,13 +1313,15 @@ function renderBajas(data) {
 function filterBajas() {
   if (!dataBajas.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
   const q          = document.getElementById('search-bajas').value.trim().toLowerCase();
+  const destino    = document.getElementById('filter-destino-bajas').value.trim().toLowerCase();
   const fechaDesde = document.getElementById('bajas-desde').value;
   const fechaHasta = document.getElementById('bajas-hasta').value;
   const cols       = getBajasCols(Object.keys(dataBajas[0]));
   const colFecha   = cols.fecha;
 
   const filtered = dataBajas.filter(r => {
-    const coincideTexto = !q || Object.values(r).some(v => String(v).toLowerCase().includes(q));
+    const coincideTexto   = !q       || Object.values(r).some(v => String(v).toLowerCase().includes(q));
+    const coincideDestino = !destino || String(r[cols.destino] || '').toLowerCase().includes(destino);
     let cumpleDesde = true, cumpleHasta = true;
     if ((fechaDesde || fechaHasta) && colFecha) {
       const fechaRaw = String(r[colFecha] || '').trim();
@@ -1328,15 +1334,16 @@ function filterBajas() {
       cumpleDesde = !fechaDesde || fechaISO >= fechaDesde;
       cumpleHasta = !fechaHasta || fechaISO <= fechaHasta;
     }
-    return coincideTexto && cumpleDesde && cumpleHasta;
+    return coincideTexto && coincideDestino && cumpleDesde && cumpleHasta;
   });
   renderBajas(filtered);
 }
 
 function clearFilterBajas() {
-  document.getElementById('search-bajas').value = '';
-  document.getElementById('bajas-desde').value  = '';
-  document.getElementById('bajas-hasta').value  = '';
+  document.getElementById('search-bajas').value         = '';
+  document.getElementById('filter-destino-bajas').value = '';
+  document.getElementById('bajas-desde').value          = '';
+  document.getElementById('bajas-hasta').value          = '';
   renderBajas(dataBajas);
 }
 

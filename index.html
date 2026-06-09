@@ -5,6 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <title>Salon Logic WMS - Dashboard de Inventario</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 <script id="tailwind-config">
@@ -1118,65 +1119,78 @@ document.getElementById('global-search').addEventListener('input', function() {
 });
 
 // =============================================
-// EXPORTAR CSV
+// EXPORTAR XLSX
 // =============================================
 function exportCSV(type) {
-  let data, filename;
-  
-  // Obtenemos los datos basados en lo que está filtrado actualmente
-  // Para hacerlo sencillo, podemos crear una variable global temporal 'dataMovFiltrado'
-  // Pero aquí usaremos una lógica más limpia:
-  
+  let data, filename, sheetName;
+
   if (type === 'saldo') {
-    // Si quisieras exportar saldo filtrado, necesitarías guardar el estado en una variable
-    data = dataSaldo; 
-    filename = 'saldo_inventario.csv';
+    data = dataSaldo;
+    filename = 'saldo_inventario.xlsx';
+    sheetName = 'Saldo';
   } else if (type === 'mov') {
-    // OBTENER DATOS ACTUALES DE LA TABLA:
-    const rows = Array.from(document.querySelectorAll('#tbody-mov tr')).filter(tr => !tr.classList.contains('loading-row'));
+    const rows = Array.from(document.querySelectorAll('#tbody-mov tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
     data = rows.map(tr => {
       const tds = tr.querySelectorAll('td');
-      return {
-        fecha: tds[0].innerText,
-        codigo: tds[1].innerText,
-        lote: tds[2].innerText, // Ajusta según tus columnas
-        origen: tds[3].innerText,
-        destino: tds[4].innerText,
-        cantidad: tds[5].innerText,
-        usuario: tds[6].innerText
-      };
+      return { FECHA: tds[0]?.innerText, CODIGO: tds[1]?.innerText, LOTE_BPCS: tds[2]?.innerText,
+               ORIGEN: tds[3]?.innerText, DESTINO: tds[4]?.innerText,
+               CANTIDAD: tds[5]?.innerText, USUARIO: tds[6]?.innerText };
     });
-    filename = 'movimientos_filtrados.csv';
+    filename = 'movimientos_filtrados.xlsx';
+    sheetName = 'Movimientos';
   } else if (type === 'alertas') {
     const rows = Array.from(document.querySelectorAll('#tbody-alertas tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
     data = rows.map(tr => {
       const tds = tr.querySelectorAll('td');
-      return { codigo: tds[0]?.innerText, descripcion: tds[1]?.innerText, lote: tds[2]?.innerText,
-               whs: tds[3]?.innerText, ubicacion: tds[4]?.innerText, cantidad: tds[5]?.innerText,
-               fecha_vence: tds[6]?.innerText, dias_restantes: tds[7]?.innerText, estado: tds[8]?.innerText };
+      return { CODIGO: tds[0]?.innerText, DESCRIPCION: tds[1]?.innerText, LOTE: tds[2]?.innerText,
+               WHS: tds[3]?.innerText, UBICACION: tds[4]?.innerText, CANTIDAD: tds[5]?.innerText,
+               FECHA_VENCE: tds[6]?.innerText, DIAS_RESTANTES: tds[7]?.innerText, ESTADO: tds[8]?.innerText };
     });
-    filename = 'alertas_vencimiento.csv';
+    filename = 'alertas_vencimiento.xlsx';
+    sheetName = 'Alertas';
   } else if (type === 'bajas') {
     const rows = Array.from(document.querySelectorAll('#tbody-bajas tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
     data = rows.map(tr => {
       const tds = tr.querySelectorAll('td');
-      return { fecha: tds[0]?.innerText, codigo: tds[1]?.innerText, descripcion: tds[2]?.innerText,
-               ean13: tds[3]?.innerText, lote: tds[4]?.innerText, expira: tds[5]?.innerText,
-               cantidad: tds[6]?.innerText, bodega: tds[7]?.innerText, ubic_origen: tds[8]?.innerText,
-               ubic_destino: tds[9]?.innerText, estatus: tds[10]?.innerText, usuario: tds[11]?.innerText };
+      return { FECHA: tds[0]?.innerText, CODIGO: tds[1]?.innerText, DESCRIPCION: tds[2]?.innerText,
+               EAN13: tds[3]?.innerText, LOTE: tds[4]?.innerText, EXPIRA: tds[5]?.innerText,
+               CANTIDAD: tds[6]?.innerText, BODEGA: tds[7]?.innerText, UBIC_ORIGEN: tds[8]?.innerText,
+               UBIC_DESTINO: tds[9]?.innerText, ESTATUS: tds[10]?.innerText, USUARIO: tds[11]?.innerText };
     });
-    filename = 'reporte_bajas.csv';
+    filename = 'reporte_bajas.xlsx';
+    sheetName = 'Bajas';
   }
 
-  if (!data || data.length === 0) return;
-  
-  const hdrs = Object.keys(data[0]);
-  const csv = [hdrs.join(','), ...data.map(r => hdrs.map(h => '"' + (r[h]||'').replace(/"/g, '""') + '"').join(','))].join('\n');
-  
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
+  if (!data || data.length === 0) { alert('No hay datos para exportar.'); return; }
+
+  // Crear worksheet y workbook con SheetJS
+  const ws = XLSX.utils.json_to_sheet(data);
+
+  // Ancho automático de columnas
+  const cols = Object.keys(data[0]);
+  ws['!cols'] = cols.map(col => {
+    const maxLen = Math.max(
+      col.length,
+      ...data.map(r => String(r[col] || '').length)
+    );
+    return { wch: Math.min(maxLen + 2, 50) };
+  });
+
+  // Estilo de cabecera (fondo primario verde)
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const cellAddr = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (!ws[cellAddr]) continue;
+    ws[cellAddr].s = {
+      font:    { bold: true, color: { rgb: 'FFFFFF' } },
+      fill:    { fgColor: { rgb: '124343' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    };
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, filename);
 }
 
 // =============================================

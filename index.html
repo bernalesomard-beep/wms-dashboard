@@ -119,11 +119,11 @@
   </div>
   <div class="flex items-center gap-6">
     <div class="flex items-center gap-4 border-r border-outline-variant pr-6">
-      <button class="relative text-on-surface-variant hover:text-primary transition-all">
+      <button onclick="mostrarAlertas()" class="relative text-on-surface-variant hover:text-primary transition-all" title="Alertas de vencimiento">
         <span class="material-symbols-outlined">notifications</span>
         <span id="alert-badge" class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full hidden"></span>
       </button>
-      <button class="text-on-surface-variant hover:text-primary transition-all">
+      <button onclick="mostrarInfoApp()" class="text-on-surface-variant hover:text-primary transition-all" title="Información del sistema">
         <span class="material-symbols-outlined">account_circle</span>
       </button>
     </div>
@@ -1352,6 +1352,58 @@ loadSaldo();
 loadMov();
 loadBajas();
 setInterval(() => { loadSaldo(); loadMov(); loadBajas(); }, 300000);
+
+// =============================================
+// MODAL CAMPANILLA Y USUARIO
+// =============================================
+function mostrarAlertas() {
+  const alertas = document.querySelectorAll('#tbody-alertas tr:not(.loading-row):not(.error-row)');
+  const count = alertas.length;
+  const msg = count > 0
+    ? `<span style="color:#ba1a1a;font-size:28px;font-weight:700">${count}</span><br><span style="font-size:13px;color:#4a4535">producto${count !== 1 ? 's' : ''} con alerta de vencimiento activa</span><br><br><span style="font-size:12px;color:#8a8470">Ir a <b>Alertas Críticas</b> para ver el detalle.</span>`
+    : `<span style="color:#2e7d32;font-size:28px;font-weight:700">✓</span><br><span style="font-size:13px;color:#4a4535">Sin alertas críticas activas</span>`;
+  mostrarModal('🔔 Alertas de Vencimiento', msg);
+}
+
+function mostrarInfoApp() {
+  const msg = `<div style="text-align:center;padding:8px 0">
+    <div style="font-size:40px;margin-bottom:8px">👷</div>
+    <div style="font-size:18px;font-weight:700;color:#584B09;margin-bottom:4px">Creado por Omar Bernales</div>
+    <div style="font-size:12px;color:#8a8470;margin-bottom:16px">Odan89</div>
+    <div style="font-size:12px;color:#4a4535;background:#f3f0e5;border-radius:8px;padding:10px 14px;text-align:left;line-height:1.8">
+      📦 <b>Sistema:</b> Salon Logic WMS<br>
+      🔗 <b>Fuente:</b> Google Sheets en tiempo real<br>
+      ⏱ <b>Refresco:</b> Automático cada 5 min<br>
+      📁 <b>Archivo:</b> Unidireccional (solo lectura)
+    </div>
+  </div>`;
+  mostrarModal('ℹ️ Información del Sistema', msg);
+}
+
+function mostrarModal(titulo, contenido) {
+  document.getElementById('wms-modal-title').innerHTML = titulo;
+  document.getElementById('wms-modal-body').innerHTML = contenido;
+  document.getElementById('wms-modal').classList.remove('hidden');
+}
+
+function cerrarModal() {
+  document.getElementById('wms-modal').classList.add('hidden');
+}
 </script>
+<!-- Modal general -->
+<div id="wms-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+  <div onclick="cerrarModal()" class="absolute inset-0 bg-black/40"></div>
+  <div class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 border border-outline-variant">
+    <div class="flex justify-between items-center mb-4">
+      <h3 id="wms-modal-title" class="font-headline-md text-[16px] font-bold text-primary"></h3>
+      <button onclick="cerrarModal()" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div id="wms-modal-body" class="text-center text-on-surface"></div>
+    <button onclick="cerrarModal()" class="mt-5 w-full py-2 bg-primary text-white font-bold rounded-lg text-[13px] hover:opacity-90 transition-colors">Cerrar</button>
+  </div>
+</div>
+
 </body>
 </html>

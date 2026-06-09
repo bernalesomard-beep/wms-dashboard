@@ -14,19 +14,19 @@
     theme: {
       extend: {
         "colors": {
-          "primary-container": "#2d5a5a","on-error-container": "#93000a","surface-variant": "#e1e3e4",
-          "surface-tint": "#396666","primary-fixed": "#bcebeb","inverse-on-surface": "#f0f1f2",
-          "on-primary-fixed": "#002020","surface-container-high": "#e7e8e9","on-secondary": "#ffffff",
-          "on-background": "#191c1d","surface-dim": "#d9dadb","surface-bright": "#f8f9fa",
-          "background": "#f8f9fa","secondary-fixed-dim": "#dfbbe4","on-primary-container": "#a1cfcf",
-          "on-secondary-fixed": "#2a1231","surface": "#f8f9fa","error": "#ba1a1a","on-error": "#ffffff",
-          "inverse-surface": "#2e3132","primary-fixed-dim": "#a1cfcf","primary": "#124343",
-          "outline-variant": "#c0c8c7","surface-container-lowest": "#ffffff","on-surface-variant": "#404848",
-          "inverse-primary": "#a1cfcf","tertiary-container": "#734934","secondary-fixed": "#fbd7ff",
-          "secondary": "#725478","surface-container": "#edeeef","on-secondary-container": "#76587c",
-          "tertiary-fixed": "#ffdbcb","secondary-container": "#f9d4fe","outline": "#707978",
-          "on-tertiary": "#ffffff","error-container": "#ffdad6","surface-container-highest": "#e1e3e4",
-          "tertiary": "#58331f","surface-container-low": "#f3f4f5","on-primary": "#ffffff","on-surface": "#191c1d"
+          "primary-container": "#3d3506","on-error-container": "#93000a","surface-variant": "#e8e4d9",
+          "surface-tint": "#949201","primary-fixed": "#f0e9c8","inverse-on-surface": "#f5f1e8",
+          "on-primary-fixed": "#13100B","surface-container-high": "#ede8da","on-secondary": "#ffffff",
+          "on-background": "#13100B","surface-dim": "#d8d3c5","surface-bright": "#faf8f2",
+          "background": "#f5f1e8","secondary-fixed-dim": "#dfbbe4","on-primary-container": "#f0e9c8",
+          "on-secondary-fixed": "#2a1231","surface": "#faf8f2","error": "#ba1a1a","on-error": "#ffffff",
+          "inverse-surface": "#2a2518","primary-fixed-dim": "#d4c47a","primary": "#584B09",
+          "outline-variant": "#c8c2a8","surface-container-lowest": "#ffffff","on-surface-variant": "#4a4535",
+          "inverse-primary": "#d4c47a","tertiary-container": "#734934","secondary-fixed": "#fbd7ff",
+          "secondary": "#725478","surface-container": "#edeadc","on-secondary-container": "#76587c",
+          "tertiary-fixed": "#ffdbcb","secondary-container": "#f9d4fe","outline": "#8a8470",
+          "on-tertiary": "#ffffff","error-container": "#ffdad6","surface-container-highest": "#e8e4d9",
+          "tertiary": "#58331f","surface-container-low": "#f3f0e5","on-primary": "#ffffff","on-surface": "#13100B"
         },
         "fontFamily": {
           "table-header": ["Hanken Grotesk"],"headline-lg": ["Hanken Grotesk"],"body-md": ["Hanken Grotesk"],
@@ -50,15 +50,15 @@
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   body { font-family: 'Hanken Grotesk', sans-serif; }
   .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background: #124343; border-radius: 10px; border: 2px solid #f1f1f1; }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #2d5a5a; }
-  thead th { position: sticky; top: 0; z-index: 10; background-color: #124343; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #f3f0e5; border-radius: 10px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #584B09; border-radius: 10px; border: 2px solid #f3f0e5; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #949201; }
+  thead th { position: sticky; top: 0; z-index: 10; background-color: #584B09; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { animation: spin 1s linear infinite; }
-  .loading-row td { text-align: center; padding: 2rem; color: #707978; font-family: 'Hanken Grotesk', sans-serif; }
+  .loading-row td { text-align: center; padding: 2rem; color: #8a8470; font-family: 'Hanken Grotesk', sans-serif; }
   .error-row td { text-align: center; padding: 2rem; color: #ba1a1a; font-family: 'Hanken Grotesk', sans-serif; }
-  .last-update { font-size: 11px; color: #707978; font-family: 'JetBrains Mono', monospace; }
+  .last-update { font-size: 11px; color: #8a8470; font-family: 'JetBrains Mono', monospace; }
   .badge-ok { background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .badge-warn { background: #fff8e1; color: #f57f17; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .badge-error { background: #ffebee; color: #ba1a1a; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
@@ -83,8 +83,8 @@
 
 <!-- SideNavBar -->
 <aside class="h-screen fixed left-0 top-0 bg-surface border-r border-outline-variant flex flex-col py-8 z-50 w-40">
-  <div class="px-6 mb-10 flex flex-col items-center gap-2">
-    <div class="w-10 h-10 flex items-center justify-center rounded-lg overflow-hidden">
+  <div class="px-4 mb-8 flex flex-col items-center gap-2">
+    <div class="w-20 h-20 flex items-center justify-center rounded-xl overflow-hidden">
       <img alt="Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4NJMHsdDlCg52Ed-P7Bo9t37SoLculsDk4KdYXQhHemRTogxYJNjhTr76JWZ2w9Uwkw7nSEQ9hVWVm4b20NK7QLxgHJvsKk_Vjm8xdHC7-XkqmeUOTuxi52Kb_W_MqJvRi667SqA33Ex--nVyZ-5xua_PcW9Ps3Ta36tI9rid285R6OtPAquWsrHu5VGmij2ABJ0THXPxPz5XDRMolTUzKQEhqlVPgddeGmCKTWfWFuQq-HfO-7r9H512MSPYThjnYpY">
     </div>
     <div class="text-center">
@@ -917,9 +917,9 @@ function updateDonut(data) {
   ctx.clearRect(0, 0, 144, 144);
   
   const segs = [
-    { v: vig, c: '#124343' }, // Vigentes
-    { v: prox, c: '#725478' }, // Por Vencer
-    { v: venc, c: '#ba1a1a' }  // Vencidos
+    { v: vig, c: '#584B09' }, // Vigentes - oliva oscuro
+    { v: prox, c: '#725478' }, // Por Vencer - morado (se mantiene)
+    { v: venc, c: '#ba1a1a' }  // Vencidos - rojo (se mantiene)
   ];
   
   let start = -Math.PI / 2;
@@ -938,7 +938,7 @@ function updateDonut(data) {
   // Círculo blanco central para efecto donut
   ctx.beginPath();
   ctx.arc(72, 72, 40, 0, 2 * Math.PI);
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = '#faf8f2'; // surface nueva paleta
   ctx.fill();
 }
 
@@ -1187,7 +1187,7 @@ function exportCSV(type) {
     if (!ws[cellAddr]) continue;
     ws[cellAddr].s = {
       font:    { bold: true, color: { rgb: 'FFFFFF' } },
-      fill:    { fgColor: { rgb: '124343' } },
+      fill:    { fgColor: { rgb: '584B09' } },
       alignment: { horizontal: 'center', vertical: 'center' }
     };
   }

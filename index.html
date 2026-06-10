@@ -321,11 +321,11 @@
             </button>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">warehouse</span>
-              <input id="filter-whs-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" oninput="filterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-28" placeholder="WHS...">
+              <input id="filter-whs-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" oninput="debouncedFilterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-28" placeholder="WHS...">
             </div>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
-              <input id="search-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" oninput="filterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
+              <input id="search-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" oninput="debouncedFilterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
             </div>
             <button onclick="filterAlertas()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
@@ -467,7 +467,7 @@
           </button>
           <div class="relative flex items-center">
             <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">place</span>
-            <input id="filter-destino-bajas" oninput="filterBajas()" onkeydown="if(event.key==='Enter')filterBajas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Ubic. Destino...">
+            <input id="filter-destino-bajas" oninput="debouncedFilterBajas()" onkeydown="if(event.key==='Enter')filterBajas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Ubic. Destino...">
           </div>
           <div class="relative flex items-center">
             <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
@@ -532,14 +532,18 @@ function proxyURL(url) {
   return 'https://api.allorigins.win/get?url=' + encodeURIComponent(url) + '&t=' + Date.now();
 }
 
-async function fetchCSV(url) {
-  // Intento 1: directo (funciona si está en servidor web)
-  try {
-    const r = await fetch(url + '&t=' + Date.now());
-    if (r.ok) return await r.text();
-  } catch(e) { /* CORS bloqueado, usar proxy */ }
+// Detectar si estamos en archivo local (necesita proxy siempre)
+const ES_LOCAL = location.protocol === 'file:';
 
-  // Intento 2: via proxy allorigins
+async function fetchCSV(url) {
+  if (!ES_LOCAL) {
+    // En servidor web: intento directo primero
+    try {
+      const r = await fetch(url + '&t=' + Date.now());
+      if (r.ok) return await r.text();
+    } catch(e) { /* CORS bloqueado, usar proxy */ }
+  }
+  // Proxy allorigins
   const r2 = await fetch(proxyURL(url));
   if (!r2.ok) throw new Error('HTTP ' + r2.status);
   const json = await r2.json();
@@ -1120,19 +1124,33 @@ function clearFilterAlertas() {
 }
 
 // =============================================
+// DEBOUNCE — evita render en cada tecla
+// =============================================
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+const debouncedFilterAlertas = debounce(filterAlertas, 250);
+const debouncedFilterBajas   = debounce(filterBajas, 250);
+
+// =============================================
 // BUSQUEDA GLOBAL
 // =============================================
-document.getElementById('global-search').addEventListener('input', function() {
-  const q = this.value.toLowerCase();
+const debouncedGlobalSearch = debounce(function(q) {
   if (!q) {
     renderSaldo(dataSaldo);
     renderMov(dataMov);
     renderAlertas(dataSaldo);
     return;
   }
-  renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
-  renderMov(dataMov.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
-  renderAlertas(dataSaldo.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
+  const ql = q.toLowerCase();
+  renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(ql))));
+  renderMov(dataMov.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(ql))));
+  renderAlertas(dataSaldo.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(ql))));
+}, 300);
+
+document.getElementById('global-search').addEventListener('input', function() {
+  debouncedGlobalSearch(this.value);
 });
 
 // =============================================
@@ -1375,10 +1393,11 @@ function clearFilterBajas() {
 }
 
 
-loadSaldo();
-loadMov();
-loadBajas();
-setInterval(() => { loadSaldo(); loadMov(); loadBajas(); }, 300000);
+async function cargarTodo() {
+  await Promise.allSettled([loadSaldo(), loadMov(), loadBajas()]);
+}
+cargarTodo();
+setInterval(cargarTodo, 600000);
 
 // =============================================
 // EDICIÓN DE MOVIMIENTOS (BIDIRECCIONAL)
@@ -1414,7 +1433,7 @@ function editarCeldaMov(td) {
   td.innerHTML = `<input id="inline-input" type="${esNumero ? 'number' : 'text'}" value="${original}"
     class="w-full border-2 border-primary rounded px-2 py-1 text-[12px] font-label-data outline-none bg-white"
     onkeydown="handleInlineKey(event, this, '${id}', '${campo}', '${original}')"
-    onblur="cancelarInline(this, '${original}')">`;
+    onblur="blurInline(this, '${id}', '${campo}', '${original}')">`;
   const input = td.querySelector('#inline-input');
   input.focus();
   input.select();
@@ -1437,6 +1456,15 @@ function cancelarInline(input, original) {
   if (!td) return;
   td.classList.remove('editing');
   td.innerHTML = original || '—';
+}
+
+function blurInline(input, id, campo, original) {
+  const nuevoValor = input.value.trim();
+  if (nuevoValor === '' || nuevoValor === original) {
+    cancelarInline(input, original);
+  } else {
+    guardarInlineMov(input.closest('td'), id, campo, nuevoValor, original);
+  }
 }
 
 async function guardarInlineMov(td, id, campo, nuevoValor, original) {

@@ -63,6 +63,9 @@
   .badge-warn { background: #fff8e1; color: #f57f17; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .badge-error { background: #ffebee; color: #ba1a1a; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .auto-dot { width:8px; height:8px; border-radius:50%; background:#2e7d32; display:inline-block; animation: pulse 2s infinite; }
+  .editable-cell { cursor: pointer; position: relative; }
+  .editable-cell:hover::after { content: '✎'; position: absolute; top: 4px; right: 4px; font-size: 10px; color: #584B09; opacity: 0.6; }
+  .editable-cell.editing { padding: 2px !important; background: #faf8f2; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
   /* Cuando la sección activa es saldo o movimiento, la columna de tablas ocupa todo el ancho */
@@ -228,6 +231,7 @@
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant w-8"><input type="checkbox" id="chk-all-saldo" onchange="toggleAllCheck('tbody-saldo',this.checked)" class="w-4 h-4 accent-white cursor-pointer"></th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">WHS</th>
@@ -284,6 +288,7 @@
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant w-8"><input type="checkbox" id="chk-all-mov" onchange="toggleAllCheck('tbody-mov',this.checked)" class="w-4 h-4 accent-white cursor-pointer"></th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">FECHA / HORA</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE BPCS</th>
@@ -337,6 +342,7 @@
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant w-8"><input type="checkbox" id="chk-all-alertas" onchange="toggleAllCheck('tbody-alertas',this.checked)" class="w-4 h-4 accent-white cursor-pointer"></th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE</th>
@@ -482,6 +488,7 @@
         <table class="w-full border-collapse border border-outline-variant">
           <thead>
             <tr class="bg-primary text-white">
+              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant w-8"><input type="checkbox" id="chk-all-bajas" onchange="toggleAllCheck('tbody-bajas',this.checked)" class="w-4 h-4 accent-white cursor-pointer"></th>
               <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">FECHA</th>
               <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">CODIGO</th>
               <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
@@ -713,6 +720,7 @@ function renderSaldo(data) {
     const rowClass = days !== null && days < 0 ? 'text-error font-medium' : days !== null && days <= ALERT_DAYS ? 'text-secondary font-medium' : 'text-on-surface';
     
     html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
+      + '<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.whs]||'—') + '</td>'
@@ -766,6 +774,7 @@ function renderAlertas(data) {
     const badge = days <= 0 ? '<span class="badge-error">VENCIDO</span>' : days <= 60 ? '<span class="badge-error">CRITICO</span>' : '<span class="badge-warn">PROXIMO</span>';
     
     html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
+      + '<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote_fisico]||'—') + '</td>'
@@ -805,23 +814,27 @@ async function loadMov() {
 // =============================================
 function renderMov(data) {
   const tbody = document.getElementById('tbody-mov');
-  // Cambiamos a 7 porque eliminamos la columna LOTE
   if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin movimientos registrados</td></tr>'; return; }
   
   const cols = getMovCols(Object.keys(data[0]));
   let html = '';
   
   data.forEach(row => {
-    html += '<tr class="hover:bg-surface-container-low transition-colors">'
-      + '<td class="px-3 py-3 font-label-data whitespace-nowrap border border-outline-variant">' + (row[cols.fecha]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
-      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.bpcs]||'—') + '</td>'
-      // AQUÍ ELIMINAMOS LA LÍNEA DE (row[cols.lote])
-      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.origen]||'—') + '</td>'
-      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.destino]||'—') + '</td>'
-      + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
-      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.usuario]||'—') + '</td>'
-      + '</tr>';
+    const id      = row['ID'] || row['id'] || '';
+    const destino = row[cols.destino] || '';
+    const cantidad= row[cols.cantidad] || '';
+    const idAttr  = id ? `data-id="${id}"` : '';
+
+    html += `<tr class="hover:bg-surface-container-low transition-colors" title="Doble clic en Ubic. Destino o Cantidad para editar">`
+      + `<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>`
+      + `<td class="px-3 py-3 font-label-data whitespace-nowrap border border-outline-variant">${row[cols.fecha]||'—'}</td>`
+      + `<td class="px-3 py-3 font-label-data border border-outline-variant">${row[cols.codigo]||'—'}</td>`
+      + `<td class="px-3 py-3 font-label-data border border-outline-variant">${row[cols.bpcs]||'—'}</td>`
+      + `<td class="px-3 py-3 border border-outline-variant">${row[cols.origen]||'—'}</td>`
+      + `<td class="px-3 py-3 font-label-data border border-outline-variant editable-cell" ${idAttr} data-campo="rtolc" data-original="${destino}" ondblclick="editarCeldaMov(this)" title="Doble clic para editar">${destino||'—'}</td>`
+      + `<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant editable-cell" ${idAttr} data-campo="rqtyt" data-original="${cantidad}" ondblclick="editarCeldaMov(this)" title="Doble clic para editar">${cantidad||'0'}</td>`
+      + `<td class="px-3 py-3 border border-outline-variant">${row[cols.usuario]||'—'}</td>`
+      + `</tr>`;
   });
   tbody.innerHTML = html;
 }
@@ -1123,43 +1136,65 @@ document.getElementById('global-search').addEventListener('input', function() {
 });
 
 // =============================================
+// CHECKBOX: SELECCIONAR TODO
+// =============================================
+function toggleAllCheck(tbodyId, checked) {
+  document.querySelectorAll('#' + tbodyId + ' .row-check').forEach(chk => chk.checked = checked);
+}
+
+// Obtener filas seleccionadas o todas las visibles de un tbody
+function getRowsForExport(tbodyId) {
+  const allRows = Array.from(document.querySelectorAll('#' + tbodyId + ' tr')).filter(tr =>
+    !tr.classList.contains('loading-row') && !tr.classList.contains('error-row')
+  );
+  const selected = allRows.filter(tr => tr.querySelector('.row-check')?.checked);
+  return selected.length > 0 ? selected : allRows;
+}
+
+// =============================================
 // EXPORTAR XLSX
 // =============================================
 function exportCSV(type) {
   let data, filename, sheetName;
 
   if (type === 'saldo') {
-    data = dataSaldo;
+    const rows = getRowsForExport('tbody-saldo');
+    data = rows.map(tr => {
+      const tds = tr.querySelectorAll('td');
+      return { CODIGO: tds[1]?.innerText, DESCRIPCION: tds[2]?.innerText, WHS: tds[3]?.innerText,
+               UBICACION: tds[4]?.innerText, LOTE_BPCS: tds[5]?.innerText, LOTE_FISICO: tds[6]?.innerText,
+               EXPIRA: tds[7]?.innerText, CANTIDAD: tds[8]?.innerText, ESTADO: tds[9]?.innerText };
+    });
     filename = 'saldo_inventario.xlsx';
     sheetName = 'Saldo';
   } else if (type === 'mov') {
-    const rows = Array.from(document.querySelectorAll('#tbody-mov tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
+    const rows = getRowsForExport('tbody-mov');
     data = rows.map(tr => {
       const tds = tr.querySelectorAll('td');
-      return { FECHA: tds[0]?.innerText, CODIGO: tds[1]?.innerText, LOTE_BPCS: tds[2]?.innerText,
-               ORIGEN: tds[3]?.innerText, DESTINO: tds[4]?.innerText,
-               CANTIDAD: tds[5]?.innerText, USUARIO: tds[6]?.innerText };
+      return { FECHA: tds[1]?.innerText, CODIGO: tds[2]?.innerText, LOTE_BPCS: tds[3]?.innerText,
+               ORIGEN: tds[4]?.innerText, DESTINO: tds[5]?.innerText,
+               CANTIDAD: tds[6]?.innerText, USUARIO: tds[7]?.innerText };
     });
     filename = 'movimientos_filtrados.xlsx';
     sheetName = 'Movimientos';
   } else if (type === 'alertas') {
-    const rows = Array.from(document.querySelectorAll('#tbody-alertas tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
+    const rows = getRowsForExport('tbody-alertas');
     data = rows.map(tr => {
       const tds = tr.querySelectorAll('td');
-      return { CODIGO: tds[0]?.innerText, DESCRIPCION: tds[1]?.innerText, LOTE: tds[2]?.innerText,
-               WHS: tds[3]?.innerText, UBICACION: tds[4]?.innerText, CANTIDAD: tds[5]?.innerText,
-               FECHA_VENCE: tds[6]?.innerText, DIAS_RESTANTES: tds[7]?.innerText, ESTADO: tds[8]?.innerText };
+      return { CODIGO: tds[1]?.innerText, DESCRIPCION: tds[2]?.innerText, LOTE: tds[3]?.innerText,
+               WHS: tds[4]?.innerText, UBICACION: tds[5]?.innerText, CANTIDAD: tds[6]?.innerText,
+               FECHA_VENCE: tds[7]?.innerText, DIAS_RESTANTES: tds[8]?.innerText, ESTADO: tds[9]?.innerText };
     });
     filename = 'alertas_vencimiento.xlsx';
     sheetName = 'Alertas';
   } else if (type === 'bajas') {
-    const rows = Array.from(document.querySelectorAll('#tbody-bajas tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
+    const rows = getRowsForExport('tbody-bajas');
     data = rows.map(tr => {
       const tds = tr.querySelectorAll('td');
-      return { FECHA: tds[0]?.innerText, CODIGO: tds[1]?.innerText, DESCRIPCION: tds[2]?.innerText,
-               EAN13: tds[3]?.innerText, LOTE: tds[4]?.innerText, EXPIRA: tds[5]?.innerText,
-               CANTIDAD: tds[6]?.innerText, BODEGA: tds[7]?.innerText, UBIC_ORIGEN: tds[8]?.innerText,
-               UBIC_DESTINO: tds[9]?.innerText, ESTATUS: tds[10]?.innerText, USUARIO: tds[11]?.innerText };
+      return { FECHA: tds[1]?.innerText, CODIGO: tds[2]?.innerText, DESCRIPCION: tds[3]?.innerText,
+               EAN13: tds[4]?.innerText, LOTE: tds[5]?.innerText, EXPIRA: tds[6]?.innerText,
+               CANTIDAD: tds[7]?.innerText, BODEGA: tds[8]?.innerText, UBIC_ORIGEN: tds[9]?.innerText,
+               UBIC_DESTINO: tds[10]?.innerText, ESTATUS: tds[11]?.innerText, USUARIO: tds[12]?.innerText };
     });
     filename = 'reporte_bajas.xlsx';
     sheetName = 'Bajas';
@@ -1167,31 +1202,22 @@ function exportCSV(type) {
 
   if (!data || data.length === 0) { alert('No hay datos para exportar.'); return; }
 
-  // Crear worksheet y workbook con SheetJS
   const ws = XLSX.utils.json_to_sheet(data);
-
-  // Ancho automático de columnas
   const cols = Object.keys(data[0]);
   ws['!cols'] = cols.map(col => {
-    const maxLen = Math.max(
-      col.length,
-      ...data.map(r => String(r[col] || '').length)
-    );
+    const maxLen = Math.max(col.length, ...data.map(r => String(r[col] || '').length));
     return { wch: Math.min(maxLen + 2, 50) };
   });
-
-  // Estilo de cabecera (fondo primario verde)
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let C = range.s.c; C <= range.e.c; C++) {
     const cellAddr = XLSX.utils.encode_cell({ r: 0, c: C });
     if (!ws[cellAddr]) continue;
     ws[cellAddr].s = {
-      font:    { bold: true, color: { rgb: 'FFFFFF' } },
-      fill:    { fgColor: { rgb: '584B09' } },
+      font:      { bold: true, color: { rgb: 'FFFFFF' } },
+      fill:      { fgColor: { rgb: '584B09' } },
       alignment: { horizontal: 'center', vertical: 'center' }
     };
   }
-
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, filename);
@@ -1293,6 +1319,7 @@ function renderBajas(data) {
     const days = daysToExpiry(row[cols.expira]);
     const rowClass = days !== null && days < 0 ? 'text-error' : days !== null && days <= 30 ? 'text-secondary' : '';
     html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
+      + '<td class="px-3 py-2 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
       + '<td class="px-3 py-2 font-label-data whitespace-nowrap border border-outline-variant">' + (row[cols.fecha]    || '—') + '</td>'
       + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.codigo]   || '—') + '</td>'
       + '<td class="px-3 py-2 border border-outline-variant">'                                   + (row[cols.desc]     || '—') + '</td>'
@@ -1354,6 +1381,149 @@ loadBajas();
 setInterval(() => { loadSaldo(); loadMov(); loadBajas(); }, 300000);
 
 // =============================================
+// EDICIÓN DE MOVIMIENTOS (BIDIRECCIONAL)
+// =============================================
+const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbwtLaQDeNDc-axSmuQW4WZ5Nc6ikhKGQ6OqEJI49eISKniFrLMpovnQ6pMoWauRN3VtnQ/exec';
+
+function abrirEditarMov(datos) {
+  if (!datos.id) {
+    mostrarModal('⚠️ Sin ID', '<p style="color:#ba1a1a;font-size:13px">Esta fila no tiene ID registrado y no puede editarse.</p>');
+    return;
+  }
+  document.getElementById('edit-mov-id').value      = datos.id;
+  document.getElementById('edit-mov-id-display').textContent = datos.id;
+  document.getElementById('edit-mov-destino').value  = datos.destino;
+  document.getElementById('edit-mov-cantidad').value = datos.cantidad;
+  document.getElementById('edit-mov-status').textContent = '';
+  document.getElementById('modal-edit-mov').classList.remove('hidden');
+}
+
+function editarCeldaMov(td) {
+  if (td.classList.contains('editing')) return;
+  const id       = td.getAttribute('data-id');
+  const campo    = td.getAttribute('data-campo');
+  const original = td.getAttribute('data-original');
+
+  if (!id) {
+    mostrarModal('⚠️ Sin ID', '<p style="color:#ba1a1a;font-size:13px">Esta fila no tiene ID y no puede editarse.</p>');
+    return;
+  }
+
+  td.classList.add('editing');
+  const esNumero = campo === 'rqtyt';
+  td.innerHTML = `<input id="inline-input" type="${esNumero ? 'number' : 'text'}" value="${original}"
+    class="w-full border-2 border-primary rounded px-2 py-1 text-[12px] font-label-data outline-none bg-white"
+    onkeydown="handleInlineKey(event, this, '${id}', '${campo}', '${original}')"
+    onblur="cancelarInline(this, '${original}')">`;
+  const input = td.querySelector('#inline-input');
+  input.focus();
+  input.select();
+}
+
+function handleInlineKey(e, input, id, campo, original) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const nuevoValor = input.value.trim();
+    if (nuevoValor === original) { cancelarInline(input, original); return; }
+    guardarInlineMov(input.closest('td'), id, campo, nuevoValor, original);
+  }
+  if (e.key === 'Escape') {
+    cancelarInline(input, original);
+  }
+}
+
+function cancelarInline(input, original) {
+  const td = input.closest('td');
+  if (!td) return;
+  td.classList.remove('editing');
+  td.innerHTML = original || '—';
+}
+
+async function guardarInlineMov(td, id, campo, nuevoValor, original) {
+  td.innerHTML = '<span style="color:#584B09;font-size:11px">Guardando...</span>';
+
+  try {
+    const payload = { id, [campo]: nuevoValor };
+    const resp = await fetch(URL_SCRIPT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    const json = await resp.json();
+
+    if (json.ok) {
+      td.classList.remove('editing');
+      td.setAttribute('data-original', nuevoValor);
+      td.innerHTML = nuevoValor;
+      // Flash verde de confirmación
+      td.style.background = '#e8f5e9';
+      setTimeout(() => { td.style.background = ''; }, 1000);
+    } else {
+      td.classList.remove('editing');
+      td.innerHTML = original;
+      mostrarModal('✗ Error al guardar', `<p style="color:#ba1a1a;font-size:13px">${json.mensaje}</p>`);
+    }
+  } catch(err) {
+    td.classList.remove('editing');
+    td.innerHTML = original;
+    mostrarModal('✗ Error de conexión', `<p style="color:#ba1a1a;font-size:13px">${err.message}</p>`);
+  }
+}
+
+function cerrarEditarMov() {
+  document.getElementById('modal-edit-mov').classList.add('hidden');
+}
+
+async function guardarEditarMov() {
+  const id      = document.getElementById('edit-mov-id').value.trim();
+  const destino = document.getElementById('edit-mov-destino').value.trim();
+  const cantidad= document.getElementById('edit-mov-cantidad').value.trim();
+  const statusEl= document.getElementById('edit-mov-status');
+  const btnGuardar = document.getElementById('btn-guardar-mov');
+
+  if (!destino && !cantidad) {
+    statusEl.textContent = 'Ingresa al menos un campo para editar.';
+    statusEl.style.color = '#ba1a1a';
+    return;
+  }
+
+  btnGuardar.disabled = true;
+  btnGuardar.innerHTML = '<span class="material-symbols-outlined spin text-[14px]">sync</span> Guardando...';
+  statusEl.textContent = '';
+
+  try {
+    const payload = { id };
+    if (destino)  payload.rtolc = destino;
+    if (cantidad) payload.rqtyt = cantidad;
+
+    const resp = await fetch(URL_SCRIPT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await resp.json();
+    if (json.ok) {
+      statusEl.textContent = '✓ ' + json.mensaje;
+      statusEl.style.color = '#2e7d32';
+      setTimeout(() => {
+        cerrarEditarMov();
+        loadMov(); // refresca la tabla
+      }, 1200);
+    } else {
+      statusEl.textContent = '✗ ' + json.mensaje;
+      statusEl.style.color = '#ba1a1a';
+    }
+  } catch(err) {
+    statusEl.textContent = 'Error de conexión: ' + err.message;
+    statusEl.style.color = '#ba1a1a';
+  }
+
+  btnGuardar.disabled = false;
+  btnGuardar.innerHTML = '<span class="material-symbols-outlined text-[14px]">save</span> Guardar';
+}
+
+// =============================================
 // MODAL CAMPANILLA Y USUARIO
 // =============================================
 function mostrarAlertas() {
@@ -1390,6 +1560,58 @@ function cerrarModal() {
   document.getElementById('wms-modal').classList.add('hidden');
 }
 </script>
+<!-- Modal Editar Movimiento -->
+<div id="modal-edit-mov" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+  <div onclick="cerrarEditarMov()" class="absolute inset-0 bg-black/40"></div>
+  <div class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 border border-outline-variant">
+    <div class="flex justify-between items-center mb-5">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">edit</span>
+        <h3 class="font-bold text-[16px] text-primary">Editar Movimiento</h3>
+      </div>
+      <button onclick="cerrarEditarMov()" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <input type="hidden" id="edit-mov-id">
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-[12px] font-bold text-on-surface-variant mb-1">ID de Registro</label>
+        <div id="edit-mov-id-display" class="bg-surface-container-low border border-outline rounded-lg px-3 py-2 text-[12px] font-label-data text-on-surface-variant">
+          — cargando —
+        </div>
+      </div>
+      <div>
+        <label class="block text-[12px] font-bold text-on-surface-variant mb-1">
+          <span class="material-symbols-outlined text-[14px] align-middle">place</span> Ubic. Destino (RTOLC)
+        </label>
+        <input id="edit-mov-destino" type="text" placeholder="Ej: H401"
+          class="w-full bg-surface-container-low border border-outline text-on-surface font-label-data text-[13px] rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none">
+      </div>
+      <div>
+        <label class="block text-[12px] font-bold text-on-surface-variant mb-1">
+          <span class="material-symbols-outlined text-[14px] align-middle">production_quantity_limits</span> Cantidad (RQTYT)
+        </label>
+        <input id="edit-mov-cantidad" type="number" placeholder="Ej: 405"
+          class="w-full bg-surface-container-low border border-outline text-on-surface font-label-data text-[13px] rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none">
+      </div>
+    </div>
+
+    <p id="edit-mov-status" class="text-[12px] font-bold mt-3 min-h-[18px]"></p>
+
+    <div class="flex gap-3 mt-5">
+      <button onclick="cerrarEditarMov()" class="flex-1 py-2 border border-outline text-on-surface-variant font-bold rounded-lg text-[13px] hover:bg-surface-container-high transition-colors">
+        Cancelar
+      </button>
+      <button id="btn-guardar-mov" onclick="guardarEditarMov()" class="flex-1 flex items-center justify-center gap-1 py-2 bg-primary text-white font-bold rounded-lg text-[13px] hover:opacity-90 transition-colors">
+        <span class="material-symbols-outlined text-[14px]">save</span> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal general -->
 <div id="wms-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
   <div onclick="cerrarModal()" class="absolute inset-0 bg-black/40"></div>

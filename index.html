@@ -58,8 +58,8 @@
   .spin { animation: spin 1s linear infinite; }
   .loading-row td { text-align: center; padding: 2rem; color: #8a8470; font-family: 'Hanken Grotesk', sans-serif; }
   .error-row td { text-align: center; padding: 2rem; color: #ba1a1a; font-family: 'Hanken Grotesk', sans-serif; }
-  /* Performance: reduce repaint scope for table rows */
-  tbody tr { contain: layout style; }
+  /* Performance: compositing hint for scroll containers */
+  tbody tr { }
   .last-update { font-size: 11px; color: #8a8470; font-family: 'JetBrains Mono', monospace; }
   .badge-ok { background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .badge-warn { background: #fff8e1; color: #f57f17; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
@@ -226,7 +226,7 @@
             </button>
           </div>
         </div>
-        <div id="saldo-scroll-inner" class="saldo-scroll overflow-y-auto max-h-[400px] custom-scrollbar" style="will-change:transform;contain:strict">
+        <div id="saldo-scroll-inner" class="saldo-scroll overflow-y-auto max-h-[400px] custom-scrollbar" style="will-change:transform">
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
@@ -283,7 +283,7 @@
             </button>
           </div>
         </div>
-        <div id="mov-scroll-inner" class="mov-scroll overflow-y-auto max-h-[400px] custom-scrollbar" style="will-change:transform;contain:strict">
+        <div id="mov-scroll-inner" class="mov-scroll overflow-y-auto max-h-[400px] custom-scrollbar" style="will-change:transform">
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
@@ -483,7 +483,7 @@
           </button>
         </div>
       </div>
-      <div id="bajas-scroll-inner" class="overflow-y-auto max-h-[calc(100vh-280px)] custom-scrollbar" style="will-change:transform;contain:strict">
+      <div id="bajas-scroll-inner" class="overflow-y-auto max-h-[calc(100vh-280px)] custom-scrollbar" style="will-change:transform">
         <table class="w-full border-collapse border border-outline-variant">
           <thead>
             <tr class="bg-primary text-white">

@@ -63,9 +63,6 @@
   .badge-warn { background: #fff8e1; color: #f57f17; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .badge-error { background: #ffebee; color: #ba1a1a; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .auto-dot { width:8px; height:8px; border-radius:50%; background:#2e7d32; display:inline-block; animation: pulse 2s infinite; }
-  .editable-cell { cursor: pointer; position: relative; }
-  .editable-cell:hover::after { content: '✎'; position: absolute; top: 4px; right: 4px; font-size: 10px; color: #584B09; opacity: 0.6; }
-  .editable-cell.editing { padding: 2px !important; background: #faf8f2; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
   /* Cuando la sección activa es saldo o movimiento, la columna de tablas ocupa todo el ancho */
@@ -209,9 +206,6 @@
             <span class="last-update" id="last-update-saldo"></span>
           </div>
           <div class="flex items-center gap-3 flex-wrap">
-            <button onclick="abrirImportarSaldo()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors">
-              <span class="material-symbols-outlined text-[16px]">upload_file</span><span>Importar</span>
-            </button>
             <button onclick="exportCSV('saldo')" class="flex items-center gap-1 px-3 py-1 bg-surface border border-secondary text-secondary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors">
               <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
             </button>
@@ -234,7 +228,6 @@
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
-                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant w-8"><input type="checkbox" id="chk-all-saldo" onchange="toggleAllCheck('tbody-saldo',this.checked)" class="w-4 h-4 accent-white cursor-pointer"></th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">WHS</th>
@@ -291,7 +284,6 @@
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
-                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant w-8"><input type="checkbox" id="chk-all-mov" onchange="toggleAllCheck('tbody-mov',this.checked)" class="w-4 h-4 accent-white cursor-pointer"></th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">FECHA / HORA</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE BPCS</th>
@@ -324,11 +316,11 @@
             </button>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">warehouse</span>
-              <input id="filter-whs-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" oninput="debouncedFilterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-28" placeholder="WHS...">
+              <input id="filter-whs-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" oninput="filterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-28" placeholder="WHS...">
             </div>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
-              <input id="search-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" oninput="debouncedFilterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
+              <input id="search-alertas" onkeydown="if(event.key==='Enter')filterAlertas()" oninput="filterAlertas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
             </div>
             <button onclick="filterAlertas()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
@@ -345,7 +337,6 @@
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
-                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant w-8"><input type="checkbox" id="chk-all-alertas" onchange="toggleAllCheck('tbody-alertas',this.checked)" class="w-4 h-4 accent-white cursor-pointer"></th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CODIGO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">LOTE</th>
@@ -449,7 +440,7 @@
   </div>
 
   <!-- SECCIÓN REPORTE DE BAJAS -->
-  <div data-section="bajas">
+  <div data-section="bajas" style="display:none">
     <div class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
       <div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center flex-wrap gap-3">
         <div>
@@ -470,7 +461,7 @@
           </button>
           <div class="relative flex items-center">
             <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">place</span>
-            <input id="filter-destino-bajas" oninput="debouncedFilterBajas()" onkeydown="if(event.key==='Enter')filterBajas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Ubic. Destino...">
+            <input id="filter-destino-bajas" oninput="filterBajas()" onkeydown="if(event.key==='Enter')filterBajas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-32" placeholder="Ubic. Destino...">
           </div>
           <div class="relative flex items-center">
             <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
@@ -491,7 +482,6 @@
         <table class="w-full border-collapse border border-outline-variant">
           <thead>
             <tr class="bg-primary text-white">
-              <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant w-8"><input type="checkbox" id="chk-all-bajas" onchange="toggleAllCheck('tbody-bajas',this.checked)" class="w-4 h-4 accent-white cursor-pointer"></th>
               <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">FECHA</th>
               <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant whitespace-nowrap">CODIGO</th>
               <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">DESCRIPCION</th>
@@ -529,73 +519,24 @@ const URL_SALDO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWK
 const URL_MOV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=2101441845&single=true&output=csv';
 const URL_BAJAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=868163741&single=true&output=csv';
 const ALERT_DAYS = 90;
-const CACHE_TTL  = 5 * 60 * 1000; // 5 minutos en ms
 
-// ── CACHÉ EN sessionStorage ──────────────────
-// Los datos se guardan con timestamp. Si tienen menos de 5 min, no se vuelven a pedir.
-// Al presionar "Actualizar" se fuerza ignorar el caché.
-function cacheGet(key) {
+// Proxy para evitar CORS al abrir el archivo localmente
+function proxyURL(url) {
+  return 'https://api.allorigins.win/get?url=' + encodeURIComponent(url) + '&t=' + Date.now();
+}
+
+async function fetchCSV(url) {
+  // Intento 1: directo (funciona si está en servidor web)
   try {
-    const raw = sessionStorage.getItem(key);
-    if (!raw) return null;
-    const { ts, data } = JSON.parse(raw);
-    if (Date.now() - ts > CACHE_TTL) { sessionStorage.removeItem(key); return null; }
-    return data;
-  } catch { return null; }
-}
-function cacheSet(key, data) {
-  try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
-}
-function cacheClear(key) {
-  try { sessionStorage.removeItem(key); } catch {}
-}
+    const r = await fetch(url + '&t=' + Date.now());
+    if (r.ok) return await r.text();
+  } catch(e) { /* CORS bloqueado, usar proxy */ }
 
-// ── FETCH CON PROXIES EN CADENA ──────────────
-// Intenta directo → proxy1 → proxy2. El primero que responda gana.
-const PROXIES = [
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&t=${Date.now()}`,
-];
-
-const ES_LOCAL = location.protocol === 'file:';
-
-async function fetchCSV(url, forceRefresh = false) {
-  const cacheKey = 'csv_' + btoa(url.split('gid=')[1] || url).slice(0, 12);
-
-  // Devolver caché si existe y no se fuerza refresco
-  if (!forceRefresh) {
-    const cached = cacheGet(cacheKey);
-    if (cached) return cached;
-  }
-
-  // 1. Intento directo (solo en servidor web, no local)
-  if (!ES_LOCAL) {
-    try {
-      const r = await fetch(url + '&t=' + Date.now(), { signal: AbortSignal.timeout(4000) });
-      if (r.ok) {
-        const text = await r.text();
-        cacheSet(cacheKey, text);
-        return text;
-      }
-    } catch {}
-  }
-
-  // 2. Proxies en orden — usa el primero que responda en < 8s
-  for (const makeURL of PROXIES) {
-    try {
-      const r = await fetch(makeURL(url), { signal: AbortSignal.timeout(8000) });
-      if (!r.ok) continue;
-      // allorigins devuelve JSON con .contents; corsproxy devuelve texto directo
-      const isJSON = r.headers.get('content-type')?.includes('json');
-      const text = isJSON ? (await r.json()).contents : await r.text();
-      if (text && text.length > 10) {
-        cacheSet(cacheKey, text);
-        return text;
-      }
-    } catch {}
-  }
-
-  throw new Error('No se pudo obtener los datos. Verifica tu conexión.');
+  // Intento 2: via proxy allorigins
+  const r2 = await fetch(proxyURL(url));
+  if (!r2.ok) throw new Error('HTTP ' + r2.status);
+  const json = await r2.json();
+  return json.contents;
 }
 
 let dataSaldo = [];
@@ -728,14 +669,14 @@ function statusBadge(days) {
 // =============================================
 // CARGAR SALDO
 // =============================================
-async function loadSaldo(forceRefresh = true) {
+async function loadSaldo() {
   const btn = document.getElementById('btn-saldo');
   btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
   document.getElementById('tbody-saldo').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
   document.getElementById('tbody-alertas').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando alertas...</td></tr>';
 
   try {
-    const text = await fetchCSV(URL_SALDO, forceRefresh);
+    const text = await fetchCSV(URL_SALDO);
     const { headers, rows } = parseCSV(text);
     dataSaldo = toObjects(headers, rows);
     renderSaldo(dataSaldo);
@@ -765,15 +706,13 @@ function renderSaldo(data) {
   }
   
   const cols = getSaldoCols(Object.keys(data[0]));
-  const frag = document.createDocumentFragment();
+  let html = '';
   
   data.forEach(row => {
     const days = daysToExpiry(row[cols.expira]);
     const rowClass = days !== null && days < 0 ? 'text-error font-medium' : days !== null && days <= ALERT_DAYS ? 'text-secondary font-medium' : 'text-on-surface';
-    const tr = document.createElement('tr');
-    tr.className = 'hover:bg-surface-container-low transition-colors ' + rowClass;
-    tr.innerHTML =
-        '<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
+    
+    html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.whs]||'—') + '</td>'
@@ -782,11 +721,10 @@ function renderSaldo(data) {
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote_fisico]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
       + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
-      + '<td class="px-3 py-3 text-center border border-outline-variant">' + statusBadge(days) + '</td>';
-    frag.appendChild(tr);
+      + '<td class="px-3 py-3 text-center border border-outline-variant">' + statusBadge(days) + '</td>'
+      + '</tr>';
   });
-  tbody.innerHTML = '';
-  tbody.appendChild(frag);
+  tbody.innerHTML = html;
 }
 
 // =============================================
@@ -828,7 +766,6 @@ function renderAlertas(data) {
     const badge = days <= 0 ? '<span class="badge-error">VENCIDO</span>' : days <= 60 ? '<span class="badge-error">CRITICO</span>' : '<span class="badge-warn">PROXIMO</span>';
     
     html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
-      + '<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote_fisico]||'—') + '</td>'
@@ -846,13 +783,13 @@ function renderAlertas(data) {
 // =============================================
 // CARGAR MOVIMIENTOS
 // =============================================
-async function loadMov(forceRefresh = true) {
+async function loadMov() {
   const btn = document.getElementById('btn-mov');
   btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
   document.getElementById('tbody-mov').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
 
   try {
-    const text = await fetchCSV(URL_MOV, forceRefresh);
+    const text = await fetchCSV(URL_MOV);
     const { headers, rows } = parseCSV(text);
     dataMov = toObjects(headers, rows);
     renderMov(dataMov);
@@ -868,31 +805,25 @@ async function loadMov(forceRefresh = true) {
 // =============================================
 function renderMov(data) {
   const tbody = document.getElementById('tbody-mov');
+  // Cambiamos a 7 porque eliminamos la columna LOTE
   if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin movimientos registrados</td></tr>'; return; }
   
   const cols = getMovCols(Object.keys(data[0]));
-  const frag = document.createDocumentFragment();
+  let html = '';
   
   data.forEach(row => {
-    const id      = row['ID'] || row['id'] || '';
-    const destino = row[cols.destino] || '';
-    const cantidad= row[cols.cantidad] || '';
-    const idAttr  = id ? `data-id="${id}"` : '';
-    const tr = document.createElement('tr');
-    tr.className = 'hover:bg-surface-container-low transition-colors';
-    tr.innerHTML =
-        `<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>`
-      + `<td class="px-3 py-3 font-label-data whitespace-nowrap border border-outline-variant">${row[cols.fecha]||'—'}</td>`
-      + `<td class="px-3 py-3 font-label-data border border-outline-variant">${row[cols.codigo]||'—'}</td>`
-      + `<td class="px-3 py-3 font-label-data border border-outline-variant">${row[cols.bpcs]||'—'}</td>`
-      + `<td class="px-3 py-3 border border-outline-variant">${row[cols.origen]||'—'}</td>`
-      + `<td class="px-3 py-3 font-label-data border border-outline-variant">${destino||'—'}</td>`
-      + `<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">${cantidad||'0'}</td>`
-      + `<td class="px-3 py-3 border border-outline-variant">${row[cols.usuario]||'—'}</td>`;
-    frag.appendChild(tr);
+    html += '<tr class="hover:bg-surface-container-low transition-colors">'
+      + '<td class="px-3 py-3 font-label-data whitespace-nowrap border border-outline-variant">' + (row[cols.fecha]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
+      + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.bpcs]||'—') + '</td>'
+      // AQUÍ ELIMINAMOS LA LÍNEA DE (row[cols.lote])
+      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.origen]||'—') + '</td>'
+      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.destino]||'—') + '</td>'
+      + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
+      + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.usuario]||'—') + '</td>'
+      + '</tr>';
   });
-  tbody.innerHTML = '';
-  tbody.appendChild(frag);
+  tbody.innerHTML = html;
 }
 
 // =============================================
@@ -1176,50 +1107,20 @@ function clearFilterAlertas() {
 }
 
 // =============================================
-// DEBOUNCE — evita render en cada tecla
-// =============================================
-function debounce(fn, ms) {
-  let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
-const debouncedFilterAlertas = debounce(filterAlertas, 250);
-const debouncedFilterBajas   = debounce(filterBajas, 250);
-
-// =============================================
 // BUSQUEDA GLOBAL
 // =============================================
-const debouncedGlobalSearch = debounce(function(q) {
+document.getElementById('global-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
   if (!q) {
     renderSaldo(dataSaldo);
     renderMov(dataMov);
     renderAlertas(dataSaldo);
     return;
   }
-  const ql = q.toLowerCase();
-  renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(ql))));
-  renderMov(dataMov.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(ql))));
-  renderAlertas(dataSaldo.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(ql))));
-}, 300);
-
-document.getElementById('global-search').addEventListener('input', function() {
-  debouncedGlobalSearch(this.value);
+  renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
+  renderMov(dataMov.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
+  renderAlertas(dataSaldo.filter(r => Object.values(r).some(v => v.toLowerCase().includes(q))));
 });
-
-// =============================================
-// CHECKBOX: SELECCIONAR TODO
-// =============================================
-function toggleAllCheck(tbodyId, checked) {
-  document.querySelectorAll('#' + tbodyId + ' .row-check').forEach(chk => chk.checked = checked);
-}
-
-// Obtener filas seleccionadas o todas las visibles de un tbody
-function getRowsForExport(tbodyId) {
-  const allRows = Array.from(document.querySelectorAll('#' + tbodyId + ' tr')).filter(tr =>
-    !tr.classList.contains('loading-row') && !tr.classList.contains('error-row')
-  );
-  const selected = allRows.filter(tr => tr.querySelector('.row-check')?.checked);
-  return selected.length > 0 ? selected : allRows;
-}
 
 // =============================================
 // EXPORTAR XLSX
@@ -1228,43 +1129,37 @@ function exportCSV(type) {
   let data, filename, sheetName;
 
   if (type === 'saldo') {
-    const rows = getRowsForExport('tbody-saldo');
-    data = rows.map(tr => {
-      const tds = tr.querySelectorAll('td');
-      return { CODIGO: tds[1]?.innerText, DESCRIPCION: tds[2]?.innerText, WHS: tds[3]?.innerText,
-               UBICACION: tds[4]?.innerText, LOTE_BPCS: tds[5]?.innerText, LOTE_FISICO: tds[6]?.innerText,
-               EXPIRA: tds[7]?.innerText, CANTIDAD: tds[8]?.innerText, ESTADO: tds[9]?.innerText };
-    });
+    data = dataSaldo;
     filename = 'saldo_inventario.xlsx';
     sheetName = 'Saldo';
   } else if (type === 'mov') {
-    const rows = getRowsForExport('tbody-mov');
+    const rows = Array.from(document.querySelectorAll('#tbody-mov tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
     data = rows.map(tr => {
       const tds = tr.querySelectorAll('td');
-      return { FECHA: tds[1]?.innerText, CODIGO: tds[2]?.innerText, LOTE_BPCS: tds[3]?.innerText,
-               ORIGEN: tds[4]?.innerText, DESTINO: tds[5]?.innerText,
-               CANTIDAD: tds[6]?.innerText, USUARIO: tds[7]?.innerText };
+      return { FECHA: tds[0]?.innerText, CODIGO: tds[1]?.innerText, LOTE_BPCS: tds[2]?.innerText,
+               ORIGEN: tds[3]?.innerText, DESTINO: tds[4]?.innerText,
+               CANTIDAD: tds[5]?.innerText, USUARIO: tds[6]?.innerText };
     });
     filename = 'movimientos_filtrados.xlsx';
     sheetName = 'Movimientos';
   } else if (type === 'alertas') {
-    const rows = getRowsForExport('tbody-alertas');
+    const rows = Array.from(document.querySelectorAll('#tbody-alertas tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
     data = rows.map(tr => {
       const tds = tr.querySelectorAll('td');
-      return { CODIGO: tds[1]?.innerText, DESCRIPCION: tds[2]?.innerText, LOTE: tds[3]?.innerText,
-               WHS: tds[4]?.innerText, UBICACION: tds[5]?.innerText, CANTIDAD: tds[6]?.innerText,
-               FECHA_VENCE: tds[7]?.innerText, DIAS_RESTANTES: tds[8]?.innerText, ESTADO: tds[9]?.innerText };
+      return { CODIGO: tds[0]?.innerText, DESCRIPCION: tds[1]?.innerText, LOTE: tds[2]?.innerText,
+               WHS: tds[3]?.innerText, UBICACION: tds[4]?.innerText, CANTIDAD: tds[5]?.innerText,
+               FECHA_VENCE: tds[6]?.innerText, DIAS_RESTANTES: tds[7]?.innerText, ESTADO: tds[8]?.innerText };
     });
     filename = 'alertas_vencimiento.xlsx';
     sheetName = 'Alertas';
   } else if (type === 'bajas') {
-    const rows = getRowsForExport('tbody-bajas');
+    const rows = Array.from(document.querySelectorAll('#tbody-bajas tr')).filter(tr => !tr.classList.contains('loading-row') && !tr.classList.contains('error-row'));
     data = rows.map(tr => {
       const tds = tr.querySelectorAll('td');
-      return { FECHA: tds[1]?.innerText, CODIGO: tds[2]?.innerText, DESCRIPCION: tds[3]?.innerText,
-               EAN13: tds[4]?.innerText, LOTE: tds[5]?.innerText, EXPIRA: tds[6]?.innerText,
-               CANTIDAD: tds[7]?.innerText, BODEGA: tds[8]?.innerText, UBIC_ORIGEN: tds[9]?.innerText,
-               UBIC_DESTINO: tds[10]?.innerText, ESTATUS: tds[11]?.innerText, USUARIO: tds[12]?.innerText };
+      return { FECHA: tds[0]?.innerText, CODIGO: tds[1]?.innerText, DESCRIPCION: tds[2]?.innerText,
+               EAN13: tds[3]?.innerText, LOTE: tds[4]?.innerText, EXPIRA: tds[5]?.innerText,
+               CANTIDAD: tds[6]?.innerText, BODEGA: tds[7]?.innerText, UBIC_ORIGEN: tds[8]?.innerText,
+               UBIC_DESTINO: tds[9]?.innerText, ESTATUS: tds[10]?.innerText, USUARIO: tds[11]?.innerText };
     });
     filename = 'reporte_bajas.xlsx';
     sheetName = 'Bajas';
@@ -1272,22 +1167,31 @@ function exportCSV(type) {
 
   if (!data || data.length === 0) { alert('No hay datos para exportar.'); return; }
 
+  // Crear worksheet y workbook con SheetJS
   const ws = XLSX.utils.json_to_sheet(data);
+
+  // Ancho automático de columnas
   const cols = Object.keys(data[0]);
   ws['!cols'] = cols.map(col => {
-    const maxLen = Math.max(col.length, ...data.map(r => String(r[col] || '').length));
+    const maxLen = Math.max(
+      col.length,
+      ...data.map(r => String(r[col] || '').length)
+    );
     return { wch: Math.min(maxLen + 2, 50) };
   });
+
+  // Estilo de cabecera (fondo primario verde)
   const range = XLSX.utils.decode_range(ws['!ref']);
   for (let C = range.s.c; C <= range.e.c; C++) {
     const cellAddr = XLSX.utils.encode_cell({ r: 0, c: C });
     if (!ws[cellAddr]) continue;
     ws[cellAddr].s = {
-      font:      { bold: true, color: { rgb: 'FFFFFF' } },
-      fill:      { fgColor: { rgb: '584B09' } },
+      font:    { bold: true, color: { rgb: 'FFFFFF' } },
+      fill:    { fgColor: { rgb: '584B09' } },
       alignment: { horizontal: 'center', vertical: 'center' }
     };
   }
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, filename);
@@ -1296,68 +1200,37 @@ function exportCSV(type) {
 // =============================================
 // NAVEGACIÓN POR SECCIONES
 // =============================================
-// Pre-indexar elementos por sección UNA sola vez (evita querySelectorAll repetido)
-const _secEls = {};
-function _initSecEls() {
-  document.querySelectorAll('[data-section]').forEach(el => {
-    el.getAttribute('data-section').trim().split(/\s+/).forEach(s => {
-      if (!_secEls[s]) _secEls[s] = [];
-      _secEls[s].push(el);
-    });
-  });
-}
-
-let _activeSection = null;
-
 function showSection(section) {
-  if (section === _activeSection) return;
-
-  // Construir índice la primera vez
-  if (!Object.keys(_secEls).length) _initSecEls();
-
-  const prev = _activeSection;
-  _activeSection = section;
-
-  // 1. body data-active (para los overrides CSS de grid)
+  // Marcar sección activa en body (para CSS)
   document.body.setAttribute('data-active', section);
 
-  // 2. Nav links
+  // Actualizar nav activo
   document.querySelectorAll('nav a[data-nav]').forEach(l => {
     const isActive = l.getAttribute('data-nav') === section;
-    l.classList.toggle('text-primary',            isActive);
-    l.classList.toggle('font-bold',               isActive);
-    l.classList.toggle('border-r-4',              isActive);
-    l.classList.toggle('border-primary',          isActive);
+    l.classList.toggle('text-primary',         isActive);
+    l.classList.toggle('font-bold',            isActive);
+    l.classList.toggle('border-r-4',           isActive);
+    l.classList.toggle('border-primary',       isActive);
     l.classList.toggle('bg-primary-container/10', isActive);
     l.classList.toggle('text-on-surface-variant', !isActive);
   });
 
-  // 3. Mostrar/ocultar: solo toca los elementos que realmente cambian
-  //    Oculta los del grupo anterior, muestra los del nuevo
-  const allSections = Object.keys(_secEls);
-  allSections.forEach(s => {
-    const show = s === section;
-    _secEls[s].forEach(el => {
-      el.style.display = show ? '' : 'none';
-    });
-  });
-  // Los elementos que aparecen en MÚLTIPLES secciones (ej: "dashboard saldo")
-  // deben quedar visibles si la sección activa es cualquiera de las suyas
-  document.querySelectorAll('[data-section*=" "]').forEach(el => {
-    const secs = el.getAttribute('data-section').trim().split(/\s+/);
-    el.style.display = secs.includes(section) ? '' : 'none';
+  // Mostrar/ocultar elementos según data-section
+  document.querySelectorAll('[data-section]').forEach(el => {
+    const sections = el.getAttribute('data-section').split(' ');
+    el.style.display = sections.includes(section) ? '' : 'none';
   });
 
-  // 4. Título
+  // Actualizar título del header
   const titles = {
-    dashboard:  { h: 'Resumen de Saldo (Stock)',              p: 'Estado actual de stock y movimientos logisticos.' },
-    saldo:      { h: 'Saldo de Inventario',                   p: 'Consulta y filtra el stock actual por producto, lote o ubicacion.' },
-    movimiento: { h: 'Movimientos',                           p: 'Historial de movimientos logisticos registrados.' },
-    bajas:      { h: 'Reporte de Bajas',                      p: 'Productos dados de baja del inventario.' },
+    dashboard:  { h: 'Resumen de Saldo (Stock)',   p: 'Estado actual de stock y movimientos logisticos.' },
+    saldo:      { h: 'Saldo de Inventario',         p: 'Consulta y filtra el stock actual por producto, lote o ubicación.' },
+    movimiento: { h: 'Movimientos',                 p: 'Historial de movimientos logísticos registrados.' },
+    bajas:      { h: 'Reporte de Bajas',            p: 'Productos dados de baja del inventario.' },
   };
   const t = titles[section] || titles.dashboard;
-  const h2 = document.querySelector('h2.font-headline-lg');
-  const p  = h2 && h2.nextElementSibling;
+  const h2 = document.querySelector('[data-section="dashboard"] h2');
+  const p  = document.querySelector('[data-section="dashboard"] p');
   if (h2) h2.textContent = t.h;
   if (p)  p.textContent  = t.p;
 }
@@ -1369,18 +1242,23 @@ showSection('dashboard');
 // =============================================
 // REPORTE DE BAJAS
 // =============================================
-async function loadBajas(forceRefresh = true) {
+async function loadBajas() {
   const btn = document.getElementById('btn-bajas');
   btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
   document.getElementById('tbody-bajas').innerHTML = '<tr class="loading-row"><td colspan="12"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
 
   try {
-    const text = await fetchCSV(URL_BAJAS, forceRefresh);
+    const text = await fetchCSV(URL_BAJAS);
+    console.log('[BAJAS] Primeros 300 chars:', text.substring(0, 300));
     const { headers, rows } = parseCSV(text);
+    console.log('[BAJAS] Cabeceras detectadas:', headers);
+    console.log('[BAJAS] Total filas:', rows.length);
     dataBajas = toObjects(headers, rows);
+    console.log('[BAJAS] Primer objeto:', dataBajas[0]);
     renderBajas(dataBajas);
     document.getElementById('last-update-bajas').textContent = ts();
   } catch(e) {
+    console.error('[BAJAS] Error:', e);
     document.getElementById('tbody-bajas').innerHTML = '<tr class="error-row"><td colspan="12">Error al cargar: ' + e.message + '</td></tr>';
   }
   btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar';
@@ -1410,14 +1288,11 @@ function renderBajas(data) {
     return;
   }
   const cols = getBajasCols(Object.keys(data[0]));
-  const frag = document.createDocumentFragment();
+  let html = '';
   data.forEach(row => {
     const days = daysToExpiry(row[cols.expira]);
     const rowClass = days !== null && days < 0 ? 'text-error' : days !== null && days <= 30 ? 'text-secondary' : '';
-    const tr = document.createElement('tr');
-    tr.className = 'hover:bg-surface-container-low transition-colors ' + rowClass;
-    tr.innerHTML =
-        '<td class="px-3 py-2 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
+    html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
       + '<td class="px-3 py-2 font-label-data whitespace-nowrap border border-outline-variant">' + (row[cols.fecha]    || '—') + '</td>'
       + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.codigo]   || '—') + '</td>'
       + '<td class="px-3 py-2 border border-outline-variant">'                                   + (row[cols.desc]     || '—') + '</td>'
@@ -1429,11 +1304,10 @@ function renderBajas(data) {
       + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.origen]   || '—') + '</td>'
       + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.destino]  || '—') + '</td>'
       + '<td class="px-3 py-2 text-center border border-outline-variant">'                       + (row[cols.estatus]  || '—') + '</td>'
-      + '<td class="px-3 py-2 border border-outline-variant">'                                   + (row[cols.usuario]  || '—') + '</td>';
-    frag.appendChild(tr);
+      + '<td class="px-3 py-2 border border-outline-variant">'                                   + (row[cols.usuario]  || '—') + '</td>'
+      + '</tr>';
   });
-  tbody.innerHTML = '';
-  tbody.appendChild(frag);
+  tbody.innerHTML = html;
 }
 
 function filterBajas() {
@@ -1474,168 +1348,10 @@ function clearFilterBajas() {
 }
 
 
-// Carga inicial: usa caché si existe (rápido), si no va a la red
-async function cargarTodo(forceRefresh = false) {
-  await Promise.allSettled([
-    loadSaldo(forceRefresh),
-    loadMov(forceRefresh),
-    loadBajas(forceRefresh)
-  ]);
-}
-cargarTodo(false); // primera carga: usa caché si hay
-setInterval(() => cargarTodo(true), 600000); // auto-refresco: fuerza datos frescos
-
-// =============================================
-// EDICIÓN DE MOVIMIENTOS (BIDIRECCIONAL)
-// =============================================
-const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbwtLaQDeNDc-axSmuQW4WZ5Nc6ikhKGQ6OqEJI49eISKniFrLMpovnQ6pMoWauRN3VtnQ/exec';
-
-function abrirEditarMov(datos) {
-  if (!datos.id) {
-    mostrarModal('⚠️ Sin ID', '<p style="color:#ba1a1a;font-size:13px">Esta fila no tiene ID registrado y no puede editarse.</p>');
-    return;
-  }
-  document.getElementById('edit-mov-id').value      = datos.id;
-  document.getElementById('edit-mov-id-display').textContent = datos.id;
-  document.getElementById('edit-mov-destino').value  = datos.destino;
-  document.getElementById('edit-mov-cantidad').value = datos.cantidad;
-  document.getElementById('edit-mov-status').textContent = '';
-  document.getElementById('modal-edit-mov').classList.remove('hidden');
-}
-
-function editarCeldaMov(td) {
-  if (td.classList.contains('editing')) return;
-  const id       = td.getAttribute('data-id');
-  const campo    = td.getAttribute('data-campo');
-  const original = td.getAttribute('data-original');
-
-  if (!id) {
-    mostrarModal('⚠️ Sin ID', '<p style="color:#ba1a1a;font-size:13px">Esta fila no tiene ID y no puede editarse.</p>');
-    return;
-  }
-
-  td.classList.add('editing');
-  const esNumero = campo === 'rqtyt';
-  td.innerHTML = `<input id="inline-input" type="${esNumero ? 'number' : 'text'}" value="${original}"
-    class="w-full border-2 border-primary rounded px-2 py-1 text-[12px] font-label-data outline-none bg-white"
-    onkeydown="handleInlineKey(event, this, '${id}', '${campo}', '${original}')"
-    onblur="blurInline(this, '${id}', '${campo}', '${original}')">`;
-  const input = td.querySelector('#inline-input');
-  input.focus();
-  input.select();
-}
-
-function handleInlineKey(e, input, id, campo, original) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const nuevoValor = input.value.trim();
-    if (nuevoValor === original) { cancelarInline(input, original); return; }
-    guardarInlineMov(input.closest('td'), id, campo, nuevoValor, original);
-  }
-  if (e.key === 'Escape') {
-    cancelarInline(input, original);
-  }
-}
-
-function cancelarInline(input, original) {
-  const td = input.closest('td');
-  if (!td) return;
-  td.classList.remove('editing');
-  td.innerHTML = original || '—';
-}
-
-function blurInline(input, id, campo, original) {
-  const nuevoValor = input.value.trim();
-  if (nuevoValor === '' || nuevoValor === original) {
-    cancelarInline(input, original);
-  } else {
-    guardarInlineMov(input.closest('td'), id, campo, nuevoValor, original);
-  }
-}
-
-async function guardarInlineMov(td, id, campo, nuevoValor, original) {
-  td.innerHTML = '<span style="color:#584B09;font-size:11px">Guardando...</span>';
-
-  try {
-    const payload = { id, [campo]: nuevoValor };
-    const resp = await fetch(URL_SCRIPT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
-    const json = await resp.json();
-
-    if (json.ok) {
-      td.classList.remove('editing');
-      td.setAttribute('data-original', nuevoValor);
-      td.innerHTML = nuevoValor;
-      // Flash verde de confirmación
-      td.style.background = '#e8f5e9';
-      setTimeout(() => { td.style.background = ''; }, 1000);
-    } else {
-      td.classList.remove('editing');
-      td.innerHTML = original;
-      mostrarModal('✗ Error al guardar', `<p style="color:#ba1a1a;font-size:13px">${json.mensaje}</p>`);
-    }
-  } catch(err) {
-    td.classList.remove('editing');
-    td.innerHTML = original;
-    mostrarModal('✗ Error de conexión', `<p style="color:#ba1a1a;font-size:13px">${err.message}</p>`);
-  }
-}
-
-function cerrarEditarMov() {
-  document.getElementById('modal-edit-mov').classList.add('hidden');
-}
-
-async function guardarEditarMov() {
-  const id      = document.getElementById('edit-mov-id').value.trim();
-  const destino = document.getElementById('edit-mov-destino').value.trim();
-  const cantidad= document.getElementById('edit-mov-cantidad').value.trim();
-  const statusEl= document.getElementById('edit-mov-status');
-  const btnGuardar = document.getElementById('btn-guardar-mov');
-
-  if (!destino && !cantidad) {
-    statusEl.textContent = 'Ingresa al menos un campo para editar.';
-    statusEl.style.color = '#ba1a1a';
-    return;
-  }
-
-  btnGuardar.disabled = true;
-  btnGuardar.innerHTML = '<span class="material-symbols-outlined spin text-[14px]">sync</span> Guardando...';
-  statusEl.textContent = '';
-
-  try {
-    const payload = { id };
-    if (destino)  payload.rtolc = destino;
-    if (cantidad) payload.rqtyt = cantidad;
-
-    const resp = await fetch(URL_SCRIPT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
-
-    const json = await resp.json();
-    if (json.ok) {
-      statusEl.textContent = '✓ ' + json.mensaje;
-      statusEl.style.color = '#2e7d32';
-      setTimeout(() => {
-        cerrarEditarMov();
-        loadMov(); // refresca la tabla
-      }, 1200);
-    } else {
-      statusEl.textContent = '✗ ' + json.mensaje;
-      statusEl.style.color = '#ba1a1a';
-    }
-  } catch(err) {
-    statusEl.textContent = 'Error de conexión: ' + err.message;
-    statusEl.style.color = '#ba1a1a';
-  }
-
-  btnGuardar.disabled = false;
-  btnGuardar.innerHTML = '<span class="material-symbols-outlined text-[14px]">save</span> Guardar';
-}
+loadSaldo();
+loadMov();
+loadBajas();
+setInterval(() => { loadSaldo(); loadMov(); loadBajas(); }, 300000);
 
 // =============================================
 // MODAL CAMPANILLA Y USUARIO
@@ -1673,260 +1389,7 @@ function mostrarModal(titulo, contenido) {
 function cerrarModal() {
   document.getElementById('wms-modal').classList.add('hidden');
 }
-
-// =============================================
-// IMPORTAR SALDO
-// =============================================
-let _importWorkbook = null;
-
-function abrirImportarSaldo() {
-  limpiarImportSaldo();
-  document.getElementById('import-status').textContent = '';
-  document.getElementById('modal-importar-saldo').classList.remove('hidden');
-}
-
-function cerrarImportarSaldo() {
-  document.getElementById('modal-importar-saldo').classList.add('hidden');
-  limpiarImportSaldo();
-}
-
-function limpiarImportSaldo() {
-  _importWorkbook = null;
-  document.getElementById('import-file-input').value = '';
-  document.getElementById('import-file-info').classList.add('hidden');
-  document.getElementById('import-sheet-selector').classList.add('hidden');
-  document.getElementById('import-status').textContent = '';
-  document.getElementById('btn-importar-saldo').disabled = true;
-}
-
-function handleImportDrop(e) {
-  e.preventDefault();
-  const dropzone = document.getElementById('import-dropzone');
-  dropzone.classList.remove('border-primary', 'bg-primary-container/10');
-  const file = e.dataTransfer.files[0];
-  if (file) handleImportFile(file);
-}
-
-function handleImportFile(file) {
-  if (!file) return;
-  const statusEl = document.getElementById('import-status');
-  statusEl.style.color = '#8a8470';
-  statusEl.textContent = 'Leyendo archivo...';
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = new Uint8Array(e.target.result);
-      _importWorkbook = XLSX.read(data, { type: 'array', cellDates: false, raw: false });
-
-      const sheets = _importWorkbook.SheetNames;
-      const selectEl = document.getElementById('import-sheet-select');
-      selectEl.innerHTML = sheets.map(s => `<option value="${s}">${s}</option>`).join('');
-
-      if (sheets.length > 1) {
-        document.getElementById('import-sheet-selector').classList.remove('hidden');
-      } else {
-        document.getElementById('import-sheet-selector').classList.add('hidden');
-      }
-
-      // Mostrar info del archivo
-      document.getElementById('import-file-name').textContent = file.name;
-      document.getElementById('import-file-info').classList.remove('hidden');
-      cargarHojaSeleccionada();
-    } catch(err) {
-      statusEl.style.color = '#ba1a1a';
-      statusEl.textContent = 'Error al leer el archivo: ' + err.message;
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function cargarHojaSeleccionada() {
-  if (!_importWorkbook) return;
-  const sheetName = document.getElementById('import-sheet-select').value || _importWorkbook.SheetNames[0];
-  const ws = _importWorkbook.Sheets[sheetName];
-  const filas = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
-  const statusEl = document.getElementById('import-status');
-  const rowsEl   = document.getElementById('import-file-rows');
-
-  if (!filas || filas.length < 2) {
-    statusEl.style.color = '#ba1a1a';
-    statusEl.textContent = 'La hoja no tiene datos suficientes.';
-    document.getElementById('btn-importar-saldo').disabled = true;
-    rowsEl.textContent = '';
-    return;
-  }
-
-  const dataRows = filas.length - 1;
-  rowsEl.textContent = dataRows.toLocaleString() + ' filas de datos · hoja: ' + sheetName;
-  statusEl.style.color = '#2e7d32';
-  statusEl.textContent = '✓ Archivo listo para importar';
-  document.getElementById('btn-importar-saldo').disabled = false;
-}
-
-async function enviarImportarSaldo() {
-  if (!_importWorkbook) return;
-
-  const sheetName = document.getElementById('import-sheet-select').value || _importWorkbook.SheetNames[0];
-  const ws   = _importWorkbook.Sheets[sheetName];
-  const filas = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
-  const statusEl  = document.getElementById('import-status');
-  const btnImp    = document.getElementById('btn-importar-saldo');
-
-  if (!filas || filas.length < 2) {
-    statusEl.style.color = '#ba1a1a';
-    statusEl.textContent = 'El archivo no tiene datos suficientes.';
-    return;
-  }
-
-  btnImp.disabled = true;
-  btnImp.innerHTML = '<span class="material-symbols-outlined spin text-[14px]">sync</span> Importando...';
-  statusEl.style.color = '#584B09';
-  statusEl.textContent = 'Enviando ' + (filas.length - 1).toLocaleString() + ' filas al Sheet...';
-
-  try {
-    const payload = { accion: 'importarSaldo', filas: filas };
-    const resp = await fetch(URL_SCRIPT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
-    const json = await resp.json();
-
-    if (json.ok) {
-      statusEl.style.color = '#2e7d32';
-      statusEl.textContent = '✓ ' + json.mensaje;
-      btnImp.innerHTML = '<span class="material-symbols-outlined text-[14px]">check_circle</span> Importado';
-      // Refrescar tabla saldo automáticamente
-      setTimeout(() => {
-        cerrarImportarSaldo();
-        loadSaldo();
-      }, 1500);
-    } else {
-      statusEl.style.color = '#ba1a1a';
-      statusEl.textContent = '✗ ' + json.mensaje;
-      btnImp.disabled = false;
-      btnImp.innerHTML = '<span class="material-symbols-outlined text-[14px]">cloud_upload</span> Importar al Sheet';
-    }
-  } catch(err) {
-    statusEl.style.color = '#ba1a1a';
-    statusEl.textContent = 'Error de conexion: ' + err.message;
-    btnImp.disabled = false;
-    btnImp.innerHTML = '<span class="material-symbols-outlined text-[14px]">cloud_upload</span> Importar al Sheet';
-  }
-}
 </script>
-<!-- Modal Importar Saldo -->
-<div id="modal-importar-saldo" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
-  <div onclick="cerrarImportarSaldo()" class="absolute inset-0 bg-black/40"></div>
-  <div class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 border border-outline-variant">
-    <div class="flex justify-between items-center mb-5">
-      <div class="flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary">upload_file</span>
-        <h3 class="font-bold text-[16px] text-primary">Importar Saldo desde Excel</h3>
-      </div>
-      <button onclick="cerrarImportarSaldo()" class="text-on-surface-variant hover:text-primary transition-colors">
-        <span class="material-symbols-outlined">close</span>
-      </button>
-    </div>
-
-    <div id="import-dropzone"
-      ondragover="event.preventDefault();this.classList.add('border-primary','bg-primary-container/10')"
-      ondragleave="this.classList.remove('border-primary','bg-primary-container/10')"
-      ondrop="handleImportDrop(event)"
-      onclick="document.getElementById('import-file-input').click()"
-      class="border-2 border-dashed border-outline rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-primary hover:bg-primary-container/10 mb-4">
-      <span class="material-symbols-outlined text-[40px] text-on-surface-variant mb-2 block">table_view</span>
-      <p class="font-bold text-[13px] text-on-surface">Arrastra tu archivo Excel aqui</p>
-      <p class="font-body-sm text-on-surface-variant text-[12px] mt-1">o haz clic para seleccionarlo</p>
-      <p class="font-label-data text-[11px] text-outline mt-2">.xlsx .xls .csv</p>
-    </div>
-    <input id="import-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleImportFile(this.files[0])">
-
-    <div id="import-file-info" class="hidden mb-4 flex items-center gap-3 bg-surface-container-low rounded-lg px-4 py-3 border border-outline-variant">
-      <span class="material-symbols-outlined text-primary text-[20px]">description</span>
-      <div class="flex-1 min-w-0">
-        <p id="import-file-name" class="font-bold text-[12px] text-on-surface truncate"></p>
-        <p id="import-file-rows" class="font-label-data text-[11px] text-on-surface-variant"></p>
-      </div>
-      <button onclick="limpiarImportSaldo()" class="text-on-surface-variant hover:text-error transition-colors">
-        <span class="material-symbols-outlined text-[18px]">close</span>
-      </button>
-    </div>
-
-    <div id="import-sheet-selector" class="hidden mb-4">
-      <label class="block text-[12px] font-bold text-on-surface-variant mb-1">Hoja del archivo</label>
-      <select id="import-sheet-select" onchange="cargarHojaSeleccionada()" class="w-full bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none"></select>
-    </div>
-
-    <p id="import-status" class="text-[12px] font-bold min-h-[18px] mb-3"></p>
-
-    <div class="flex gap-3">
-      <button onclick="cerrarImportarSaldo()" class="flex-1 py-2 border border-outline text-on-surface-variant font-bold rounded-lg text-[13px] hover:bg-surface-container-high transition-colors">
-        Cancelar
-      </button>
-      <button id="btn-importar-saldo" onclick="enviarImportarSaldo()" disabled
-        class="flex-1 flex items-center justify-center gap-1 py-2 bg-primary text-white font-bold rounded-lg text-[13px] hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-        <span class="material-symbols-outlined text-[14px]">cloud_upload</span> Importar al Sheet
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Editar Movimiento -->
-<div id="modal-edit-mov" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
-  <div onclick="cerrarEditarMov()" class="absolute inset-0 bg-black/40"></div>
-  <div class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 border border-outline-variant">
-    <div class="flex justify-between items-center mb-5">
-      <div class="flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary">edit</span>
-        <h3 class="font-bold text-[16px] text-primary">Editar Movimiento</h3>
-      </div>
-      <button onclick="cerrarEditarMov()" class="text-on-surface-variant hover:text-primary transition-colors">
-        <span class="material-symbols-outlined">close</span>
-      </button>
-    </div>
-
-    <input type="hidden" id="edit-mov-id">
-
-    <div class="space-y-4">
-      <div>
-        <label class="block text-[12px] font-bold text-on-surface-variant mb-1">ID de Registro</label>
-        <div id="edit-mov-id-display" class="bg-surface-container-low border border-outline rounded-lg px-3 py-2 text-[12px] font-label-data text-on-surface-variant">
-          — cargando —
-        </div>
-      </div>
-      <div>
-        <label class="block text-[12px] font-bold text-on-surface-variant mb-1">
-          <span class="material-symbols-outlined text-[14px] align-middle">place</span> Ubic. Destino (RTOLC)
-        </label>
-        <input id="edit-mov-destino" type="text" placeholder="Ej: H401"
-          class="w-full bg-surface-container-low border border-outline text-on-surface font-label-data text-[13px] rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none">
-      </div>
-      <div>
-        <label class="block text-[12px] font-bold text-on-surface-variant mb-1">
-          <span class="material-symbols-outlined text-[14px] align-middle">production_quantity_limits</span> Cantidad (RQTYT)
-        </label>
-        <input id="edit-mov-cantidad" type="number" placeholder="Ej: 405"
-          class="w-full bg-surface-container-low border border-outline text-on-surface font-label-data text-[13px] rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none">
-      </div>
-    </div>
-
-    <p id="edit-mov-status" class="text-[12px] font-bold mt-3 min-h-[18px]"></p>
-
-    <div class="flex gap-3 mt-5">
-      <button onclick="cerrarEditarMov()" class="flex-1 py-2 border border-outline text-on-surface-variant font-bold rounded-lg text-[13px] hover:bg-surface-container-high transition-colors">
-        Cancelar
-      </button>
-      <button id="btn-guardar-mov" onclick="guardarEditarMov()" class="flex-1 flex items-center justify-center gap-1 py-2 bg-primary text-white font-bold rounded-lg text-[13px] hover:opacity-90 transition-colors">
-        <span class="material-symbols-outlined text-[14px]">save</span> Guardar
-      </button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal general -->
 <div id="wms-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
   <div onclick="cerrarModal()" class="absolute inset-0 bg-black/40"></div>

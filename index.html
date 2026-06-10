@@ -1304,6 +1304,11 @@ function exportMovTRFMAS() {
     return;
   }
 
+  // Columnas a excluir (nombres exactos del Sheet, insensible a mayúsculas)
+  const EXCLUIR = ['ID', 'REGISTRO', 'COMENTARIO'];
+  // Columnas que llevan apóstrofe al inicio del valor
+  const CON_APOSTROFE = ['RBPRD', 'RBLOT', 'RFRLC', 'RTOLC', 'RRSNC', 'RCOM'];
+
   // Verificar si hay casillas seleccionadas
   const allVisibleRows = Array.from(document.querySelectorAll('#tbody-mov tr')).filter(tr =>
     !tr.classList.contains('loading-row') && !tr.classList.contains('error-row')
@@ -1312,25 +1317,36 @@ function exportMovTRFMAS() {
 
   let source;
   if (selectedRows.length > 0) {
-    // Mapear filas DOM seleccionadas a sus objetos de datos en _vsData.mov
     source = selectedRows.map(tr => {
       const idx = allVisibleRows.indexOf(tr);
       return _vsData.mov[idx] || null;
     }).filter(Boolean);
   } else {
-    // Sin selección: exportar todos los datos del filtro activo
     source = _vsData.mov.length ? _vsData.mov : dataMov;
   }
 
   if (!source.length) { alert('No hay datos para exportar.'); return; }
 
-  // Exportar todas las columnas tal como vienen del Google Sheet (sin renombrar)
-  const ws = XLSX.utils.json_to_sheet(source);
+  // Obtener cabeceras del Sheet y filtrar las excluidas
+  const allHeaders = Object.keys(source[0]);
+  const headers = allHeaders.filter(h => !EXCLUIR.includes(h.trim().toUpperCase()));
+
+  // Construir filas solo con columnas permitidas y aplicar apóstrofe donde corresponde
+  const data = source.map(row => {
+    const obj = {};
+    headers.forEach(h => {
+      const key = h.trim().toUpperCase();
+      const val = String(row[h] || '');
+      obj[h] = CON_APOSTROFE.includes(key) && val ? "'" + val : val;
+    });
+    return obj;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(data);
 
   // Ajustar ancho de columnas automáticamente
-  const headers = Object.keys(source[0]);
   ws['!cols'] = headers.map(col => {
-    const maxLen = Math.max(col.length, ...source.map(r => String(r[col] || '').length));
+    const maxLen = Math.max(col.length, ...data.map(r => String(r[col] || '').length));
     return { wch: Math.min(maxLen + 2, 50) };
   });
 
@@ -1348,7 +1364,7 @@ function exportMovTRFMAS() {
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'TRFMAS');
-  XLSX.writeFile(wb, 'TRFMAS.xlsx');
+  XLSX.writeFile(wb, 'TRFMAS.xls');
 }
 
 // Pre-indexar elementos por sección UNA sola vez (evita querySelectorAll repetido)

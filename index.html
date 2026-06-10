@@ -529,28 +529,73 @@ const URL_SALDO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWK
 const URL_MOV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=2101441845&single=true&output=csv';
 const URL_BAJAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=868163741&single=true&output=csv';
 const ALERT_DAYS = 90;
+const CACHE_TTL  = 5 * 60 * 1000; // 5 minutos en ms
 
-// Proxy para evitar CORS al abrir el archivo localmente
-function proxyURL(url) {
-  return 'https://api.allorigins.win/get?url=' + encodeURIComponent(url) + '&t=' + Date.now();
+// ── CACHÉ EN sessionStorage ──────────────────
+// Los datos se guardan con timestamp. Si tienen menos de 5 min, no se vuelven a pedir.
+// Al presionar "Actualizar" se fuerza ignorar el caché.
+function cacheGet(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) { sessionStorage.removeItem(key); return null; }
+    return data;
+  } catch { return null; }
+}
+function cacheSet(key, data) {
+  try { sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+function cacheClear(key) {
+  try { sessionStorage.removeItem(key); } catch {}
 }
 
-// Detectar si estamos en archivo local (necesita proxy siempre)
+// ── FETCH CON PROXIES EN CADENA ──────────────
+// Intenta directo → proxy1 → proxy2. El primero que responda gana.
+const PROXIES = [
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&t=${Date.now()}`,
+];
+
 const ES_LOCAL = location.protocol === 'file:';
 
-async function fetchCSV(url) {
-  if (!ES_LOCAL) {
-    // En servidor web: intento directo primero
-    try {
-      const r = await fetch(url + '&t=' + Date.now());
-      if (r.ok) return await r.text();
-    } catch(e) { /* CORS bloqueado, usar proxy */ }
+async function fetchCSV(url, forceRefresh = false) {
+  const cacheKey = 'csv_' + btoa(url.split('gid=')[1] || url).slice(0, 12);
+
+  // Devolver caché si existe y no se fuerza refresco
+  if (!forceRefresh) {
+    const cached = cacheGet(cacheKey);
+    if (cached) return cached;
   }
-  // Proxy allorigins
-  const r2 = await fetch(proxyURL(url));
-  if (!r2.ok) throw new Error('HTTP ' + r2.status);
-  const json = await r2.json();
-  return json.contents;
+
+  // 1. Intento directo (solo en servidor web, no local)
+  if (!ES_LOCAL) {
+    try {
+      const r = await fetch(url + '&t=' + Date.now(), { signal: AbortSignal.timeout(4000) });
+      if (r.ok) {
+        const text = await r.text();
+        cacheSet(cacheKey, text);
+        return text;
+      }
+    } catch {}
+  }
+
+  // 2. Proxies en orden — usa el primero que responda en < 8s
+  for (const makeURL of PROXIES) {
+    try {
+      const r = await fetch(makeURL(url), { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) continue;
+      // allorigins devuelve JSON con .contents; corsproxy devuelve texto directo
+      const isJSON = r.headers.get('content-type')?.includes('json');
+      const text = isJSON ? (await r.json()).contents : await r.text();
+      if (text && text.length > 10) {
+        cacheSet(cacheKey, text);
+        return text;
+      }
+    } catch {}
+  }
+
+  throw new Error('No se pudo obtener los datos. Verifica tu conexión.');
 }
 
 let dataSaldo = [];
@@ -683,14 +728,14 @@ function statusBadge(days) {
 // =============================================
 // CARGAR SALDO
 // =============================================
-async function loadSaldo() {
+async function loadSaldo(forceRefresh = true) {
   const btn = document.getElementById('btn-saldo');
   btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
   document.getElementById('tbody-saldo').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
   document.getElementById('tbody-alertas').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando alertas...</td></tr>';
 
   try {
-    const text = await fetchCSV(URL_SALDO);
+    const text = await fetchCSV(URL_SALDO, forceRefresh);
     const { headers, rows } = parseCSV(text);
     dataSaldo = toObjects(headers, rows);
     renderSaldo(dataSaldo);
@@ -801,13 +846,13 @@ function renderAlertas(data) {
 // =============================================
 // CARGAR MOVIMIENTOS
 // =============================================
-async function loadMov() {
+async function loadMov(forceRefresh = true) {
   const btn = document.getElementById('btn-mov');
   btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
   document.getElementById('tbody-mov').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
 
   try {
-    const text = await fetchCSV(URL_MOV);
+    const text = await fetchCSV(URL_MOV, forceRefresh);
     const { headers, rows } = parseCSV(text);
     dataMov = toObjects(headers, rows);
     renderMov(dataMov);
@@ -1324,23 +1369,18 @@ showSection('dashboard');
 // =============================================
 // REPORTE DE BAJAS
 // =============================================
-async function loadBajas() {
+async function loadBajas(forceRefresh = true) {
   const btn = document.getElementById('btn-bajas');
   btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
   document.getElementById('tbody-bajas').innerHTML = '<tr class="loading-row"><td colspan="12"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
 
   try {
-    const text = await fetchCSV(URL_BAJAS);
-    console.log('[BAJAS] Primeros 300 chars:', text.substring(0, 300));
+    const text = await fetchCSV(URL_BAJAS, forceRefresh);
     const { headers, rows } = parseCSV(text);
-    console.log('[BAJAS] Cabeceras detectadas:', headers);
-    console.log('[BAJAS] Total filas:', rows.length);
     dataBajas = toObjects(headers, rows);
-    console.log('[BAJAS] Primer objeto:', dataBajas[0]);
     renderBajas(dataBajas);
     document.getElementById('last-update-bajas').textContent = ts();
   } catch(e) {
-    console.error('[BAJAS] Error:', e);
     document.getElementById('tbody-bajas').innerHTML = '<tr class="error-row"><td colspan="12">Error al cargar: ' + e.message + '</td></tr>';
   }
   btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar';
@@ -1434,11 +1474,16 @@ function clearFilterBajas() {
 }
 
 
-async function cargarTodo() {
-  await Promise.allSettled([loadSaldo(), loadMov(), loadBajas()]);
+// Carga inicial: usa caché si existe (rápido), si no va a la red
+async function cargarTodo(forceRefresh = false) {
+  await Promise.allSettled([
+    loadSaldo(forceRefresh),
+    loadMov(forceRefresh),
+    loadBajas(forceRefresh)
+  ]);
 }
-cargarTodo();
-setInterval(cargarTodo, 600000);
+cargarTodo(false); // primera carga: usa caché si hay
+setInterval(() => cargarTodo(true), 600000); // auto-refresco: fuerza datos frescos
 
 // =============================================
 // EDICIÓN DE MOVIMIENTOS (BIDIRECCIONAL)

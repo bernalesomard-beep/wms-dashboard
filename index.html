@@ -58,6 +58,8 @@
   .spin { animation: spin 1s linear infinite; }
   .loading-row td { text-align: center; padding: 2rem; color: #8a8470; font-family: 'Hanken Grotesk', sans-serif; }
   .error-row td { text-align: center; padding: 2rem; color: #ba1a1a; font-family: 'Hanken Grotesk', sans-serif; }
+  /* Performance: reduce repaint scope for table rows */
+  tbody tr { contain: layout style; }
   .last-update { font-size: 11px; color: #8a8470; font-family: 'JetBrains Mono', monospace; }
   .badge-ok { background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .badge-warn { background: #fff8e1; color: #f57f17; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
@@ -211,7 +213,7 @@
             </button>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
-              <input id="search-saldo" onkeydown="if(event.key==='Enter')filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
+              <input id="search-saldo" oninput="debouncedFilterSaldo()" onkeydown="if(event.key==='Enter')filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
             </div>
             <button onclick="filterSaldo()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
@@ -224,7 +226,7 @@
             </button>
           </div>
         </div>
-        <div class="saldo-scroll overflow-y-auto max-h-[400px] custom-scrollbar">
+        <div id="saldo-scroll-inner" class="saldo-scroll overflow-y-auto max-h-[400px] custom-scrollbar" style="will-change:transform;contain:strict">
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
@@ -268,7 +270,7 @@
             </button>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
-              <input id="search-mov" onkeydown="if(event.key==='Enter')filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
+              <input id="search-mov" oninput="debouncedFilterMov()" onkeydown="if(event.key==='Enter')filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
             </div>
             <button onclick="filterMov()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
@@ -281,7 +283,7 @@
             </button>
           </div>
         </div>
-        <div class="mov-scroll overflow-y-auto max-h-[400px] custom-scrollbar">
+        <div id="mov-scroll-inner" class="mov-scroll overflow-y-auto max-h-[400px] custom-scrollbar" style="will-change:transform;contain:strict">
           <table class="w-full border-collapse border border-outline-variant">
             <thead>
               <tr class="bg-primary text-white">
@@ -468,7 +470,7 @@
           </div>
           <div class="relative flex items-center">
             <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
-            <input id="search-bajas" onkeydown="if(event.key==='Enter')filterBajas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
+            <input id="search-bajas" oninput="debouncedFilterBajas()" onkeydown="if(event.key==='Enter')filterBajas()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
           </div>
           <button onclick="filterBajas()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
             <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
@@ -481,7 +483,7 @@
           </button>
         </div>
       </div>
-      <div class="overflow-y-auto max-h-[calc(100vh-280px)] custom-scrollbar">
+      <div id="bajas-scroll-inner" class="overflow-y-auto max-h-[calc(100vh-280px)] custom-scrollbar" style="will-change:transform;contain:strict">
         <table class="w-full border-collapse border border-outline-variant">
           <thead>
             <tr class="bg-primary text-white">
@@ -544,15 +546,6 @@ function cacheClear(key) {
   try { sessionStorage.removeItem(key); } catch {}
 }
 
-// ── FETCH CON PROXIES EN CADENA ──────────────
-// Intenta directo → proxy1 → proxy2. El primero que responda gana.
-const PROXIES = [
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&t=${Date.now()}`,
-];
-
-const ES_LOCAL = location.protocol === 'file:';
-
 async function fetchCSV(url, forceRefresh = false) {
   const cacheKey = 'csv_' + btoa(url.split('gid=')[1] || url).slice(0, 12);
 
@@ -562,34 +555,27 @@ async function fetchCSV(url, forceRefresh = false) {
     if (cached) return cached;
   }
 
-  // 1. Intento directo (solo en servidor web, no local)
-  if (!ES_LOCAL) {
-    try {
-      const r = await fetch(url + '&t=' + Date.now(), { signal: AbortSignal.timeout(4000) });
-      if (r.ok) {
-        const text = await r.text();
-        cacheSet(cacheKey, text);
-        return text;
-      }
-    } catch {}
-  }
+  // Fetch directo a Google Sheets (funciona desde GitHub Pages sin proxy)
+  try {
+    const r = await fetch(url + '&t=' + Date.now(), { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      const text = await r.text();
+      cacheSet(cacheKey, text);
+      return text;
+    }
+  } catch {}
 
-  // 2. Proxies en orden — usa el primero que responda en < 8s
-  for (const makeURL of PROXIES) {
-    try {
-      const r = await fetch(makeURL(url), { signal: AbortSignal.timeout(8000) });
-      if (!r.ok) continue;
-      // allorigins devuelve JSON con .contents; corsproxy devuelve texto directo
-      const isJSON = r.headers.get('content-type')?.includes('json');
-      const text = isJSON ? (await r.json()).contents : await r.text();
-      if (text && text.length > 10) {
-        cacheSet(cacheKey, text);
-        return text;
-      }
-    } catch {}
-  }
+  // Fallback: un solo proxy si el directo falla
+  try {
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+    if (r.ok) {
+      const text = await r.text();
+      if (text && text.length > 10) { cacheSet(cacheKey, text); return text; }
+    }
+  } catch {}
 
-  throw new Error('No se pudo obtener los datos. Verifica tu conexión.');
+  throw new Error('No se pudo obtener los datos. Verifica tu conexion.');
 }
 
 let dataSaldo = [];
@@ -731,11 +717,12 @@ async function loadSaldo(forceRefresh = true) {
   try {
     const text = await fetchCSV(URL_SALDO, forceRefresh);
     const { headers, rows } = parseCSV(text);
+    invalidarCachesCols();
     dataSaldo = toObjects(headers, rows);
-    renderSaldo(dataSaldo);
+    buildSearchIndex('saldo', dataSaldo);
+    renderVirtual('saldo', dataSaldo, renderSaldo);
     renderAlertas(dataSaldo);
-    updateKPIs(dataSaldo);
-    updateDonut(dataSaldo);
+    updateKPIsAndDonut(dataSaldo);
     const t = ts();
     document.getElementById('last-update-saldo').textContent = t;
     document.getElementById('last-update-alertas').textContent = t;
@@ -749,16 +736,16 @@ async function loadSaldo(forceRefresh = true) {
 }
 
 // =============================================
-// RENDER SALDO
+// RENDER SALDO (virtual scroll, fragment rendering)
 // =============================================
-function renderSaldo(data) {
+function renderSaldo(data, replace = true) {
   const tbody = document.getElementById('tbody-saldo');
   if (!data.length) { 
     tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin registros</td></tr>'; 
     return; 
   }
   
-  const cols = getSaldoCols(Object.keys(data[0]));
+  const cols = getSaldoColsCached(Object.keys(data[0]));
   const frag = document.createDocumentFragment();
   
   data.forEach(row => {
@@ -779,12 +766,12 @@ function renderSaldo(data) {
       + '<td class="px-3 py-3 text-center border border-outline-variant">' + statusBadge(days) + '</td>';
     frag.appendChild(tr);
   });
-  tbody.innerHTML = '';
+  if (replace) tbody.innerHTML = '';
   tbody.appendChild(frag);
 }
 
 // =============================================
-// RENDER ALERTAS
+// RENDER ALERTAS (fragment rendering, cached cols)
 // =============================================
 function renderAlertas(data) {
   const tbody = document.getElementById('tbody-alertas');
@@ -794,7 +781,7 @@ function renderAlertas(data) {
     return; 
   }
   
-  const cols = getSaldoCols(Object.keys(data[0]));
+  const cols = getSaldoColsCached(Object.keys(data[0]));
 
   const alertas = data
     .map(row => ({ row, days: daysToExpiry(row[cols.expira]) }))
@@ -815,14 +802,15 @@ function renderAlertas(data) {
     return;
   }
 
-  let html = '';
+  const frag = document.createDocumentFragment();
   alertas.forEach(({ row, days }) => {
     const rowClass = days <= 0 ? 'text-error font-medium' : 'text-secondary font-medium';
     const diasLabel = days < 0 ? 'VENCIDO (' + Math.abs(days) + 'd)' : days === 0 ? 'HOY' : days + ' dias';
     const badge = days <= 0 ? '<span class="badge-error">VENCIDO</span>' : days <= 60 ? '<span class="badge-error">CRITICO</span>' : '<span class="badge-warn">PROXIMO</span>';
-    
-    html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
-      + '<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-surface-container-low transition-colors ' + rowClass;
+    tr.innerHTML =
+        '<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote_fisico]||'—') + '</td>'
@@ -831,10 +819,11 @@ function renderAlertas(data) {
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data font-bold border border-outline-variant">' + diasLabel + '</td>'
-      + '<td class="px-3 py-3 text-center border border-outline-variant">' + badge + '</td>'
-      + '</tr>';
+      + '<td class="px-3 py-3 text-center border border-outline-variant">' + badge + '</td>';
+    frag.appendChild(tr);
   });
-  tbody.innerHTML = html;
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
 }
   
 // =============================================
@@ -849,7 +838,8 @@ async function loadMov(forceRefresh = true) {
     const text = await fetchCSV(URL_MOV, forceRefresh);
     const { headers, rows } = parseCSV(text);
     dataMov = toObjects(headers, rows);
-    renderMov(dataMov);
+    buildSearchIndex('mov', dataMov);
+    renderVirtual('mov', dataMov, renderMov);
     document.getElementById('last-update-mov').textContent = ts();
   } catch(e) {
     document.getElementById('tbody-mov').innerHTML = '<tr class="error-row"><td colspan="8">Error al cargar movimientos: ' + e.message + '</td></tr>';
@@ -858,20 +848,18 @@ async function loadMov(forceRefresh = true) {
 }
 
 // =============================================
-// RENDER MOVIMIENTOS
+// RENDER MOVIMIENTOS (fragment rendering, cached cols)
 // =============================================
-function renderMov(data) {
+function renderMov(data, replace = true) {
   const tbody = document.getElementById('tbody-mov');
   if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin movimientos registrados</td></tr>'; return; }
   
-  const cols = getMovCols(Object.keys(data[0]));
+  const cols = getMovColsCached(Object.keys(data[0]));
   const frag = document.createDocumentFragment();
   
   data.forEach(row => {
-    const id      = row['ID'] || row['id'] || '';
     const destino = row[cols.destino] || '';
     const cantidad= row[cols.cantidad] || '';
-    const idAttr  = id ? `data-id="${id}"` : '';
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-surface-container-low transition-colors';
     tr.innerHTML =
@@ -885,125 +873,77 @@ function renderMov(data) {
       + `<td class="px-3 py-3 border border-outline-variant">${row[cols.usuario]||'—'}</td>`;
     frag.appendChild(tr);
   });
-  tbody.innerHTML = '';
+  if (replace) tbody.innerHTML = '';
   tbody.appendChild(frag);
 }
 
 // =============================================
-// KPIs
+// KPIs + DONUT — un solo loop sobre los datos (fix #6 consolidacion de procesos)
 // =============================================
-function updateKPIs(data) {
+function updateKPIsAndDonut(data) {
   if (!data.length) return;
-  const cols = getSaldoCols(Object.keys(data[0]));
+  const cols = getSaldoColsCached(Object.keys(data[0]));
   
   let total = 0, vencidos = 0;
-  
+  let vig = 0, prox = 0, venc = 0;
+
   data.forEach(row => {
-    // 1. Obtenemos el valor crudo de la columna cantidad
     let rawQty = (row[cols.cantidad] || '0').toString().trim();
-    
-    // 2. Limpieza total: eliminamos cualquier carácter que no sea número, punto o coma
-    // Esto evita errores con espacios, símbolos o formatos extraños
     let cleanQty = rawQty.replace(/[^\d.,]/g, '');
-    
-    // 3. Normalización:
-    // Si hay una coma y un punto (ej: 25.308,05), el punto es miles, quitamos el punto
     if (cleanQty.includes(',') && cleanQty.includes('.')) {
       cleanQty = cleanQty.replace(/\./g, '').replace(',', '.');
-    } 
-    // Si solo hay coma decimal (ej: 1234,56), la cambiamos a punto para parseFloat
-    else if (cleanQty.includes(',')) {
+    } else if (cleanQty.includes(',')) {
       cleanQty = cleanQty.replace(',', '.');
-    }
-    // Si solo hay puntos (ej: 25.308.055), eliminamos todos los puntos
-    else {
+    } else {
       cleanQty = cleanQty.replace(/\./g, '');
     }
-    
-    // 4. Convertimos a número
     let qty = parseFloat(cleanQty) || 0;
-    
     total += qty;
-    
-    // 5. Cálculo de vencidos (mantenemos tu lógica de días)
+
     const d = daysToExpiry(row[cols.expira]);
-    if (d !== null && d < 0) vencidos += qty;
+    if (d !== null && d < 0) { vencidos += qty; venc += Math.abs(qty); }
+    else if (d !== null && d <= ALERT_DAYS) { prox += qty; }
+    else { vig += qty; }
   });
-  
-  // 6. Actualización de vista (redondeado para evitar decimales extraños en el UI)
-  document.getElementById('kpi-total').textContent = Math.round(total).toLocaleString('es-PE');
+
+  // KPIs
+  document.getElementById('kpi-total').textContent      = Math.round(total).toLocaleString('es-PE');
   document.getElementById('kpi-disponible').textContent = Math.round(total - vencidos).toLocaleString('es-PE');
-  document.getElementById('kpi-bajas').textContent = Math.round(vencidos).toLocaleString('es-PE');
-}
+  document.getElementById('kpi-bajas').textContent      = Math.round(vencidos).toLocaleString('es-PE');
 
-// =============================================
-// DONUT CHART
-// =============================================
-function updateDonut(data) {
-  if (!data.length) return;
-  const cols = getSaldoCols(Object.keys(data[0]));
-  
-  let vig = 0, prox = 0, venc = 0;
-  
-  data.forEach(row => {
-    // Obtenemos el valor de la columna expira y convertimos a número
-    const rawVal = row[cols.expira];
-    const cant = parseFloat(row[cols.cantidad]) || 0; // Usamos la cantidad de la fila
-    const d = daysToExpiry(rawVal);
+  // Donut
+  const totalD = (vig + prox + venc) || 1;
+  const pct    = Math.round((vig / totalD) * 100);
+  document.getElementById('donut-pct').textContent        = pct + '%';
+  document.getElementById('legend-vigentes').textContent  = vig.toLocaleString();
+  document.getElementById('legend-cercanos').textContent  = prox.toLocaleString();
+  document.getElementById('legend-vencidos').textContent  = venc.toLocaleString();
 
-    // Clasificación lógica:
-    // Si d es null, es un producto sin fecha (lo tratamos como vigente)
-    // Si d < 0, está vencido
-    // Si d > ALERT_DAYS, está vigente
-    // Si está entre 0 y ALERT_DAYS, está por vencer
-    if (d === null || d > ALERT_DAYS) {
-        vig += cant;
-    } else if (d >= 0) {
-        prox += cant;
-    } else {
-        venc += Math.abs(cant); // Usamos valor absoluto para el conteo
-    }
-  });
-
-  const total = (vig + prox + venc) || 1;
-  const pct = Math.round((vig / total) * 100);
-  
-  // Actualizar textos
-  document.getElementById('donut-pct').textContent = pct + '%';
-  document.getElementById('legend-vigentes').textContent = vig.toLocaleString();
-  document.getElementById('legend-cercanos').textContent = prox.toLocaleString();
-  document.getElementById('legend-vencidos').textContent = venc.toLocaleString();
-
-  // Redibujar gráfico
   const canvas = document.getElementById('donut-chart');
-  const ctx = canvas.getContext('2d');
+  const ctx    = canvas.getContext('2d');
   ctx.clearRect(0, 0, 144, 144);
-  
   const segs = [
-    { v: vig, c: '#584B09' }, // Vigentes - oliva oscuro
-    { v: prox, c: '#725478' }, // Por Vencer - morado (se mantiene)
-    { v: venc, c: '#ba1a1a' }  // Vencidos - rojo (se mantiene)
+    { v: vig, c: '#584B09' },
+    { v: prox, c: '#725478' },
+    { v: venc, c: '#ba1a1a' }
   ];
-  
   let start = -Math.PI / 2;
   segs.forEach(s => {
-    const sweep = (s.v / total) * 2 * Math.PI;
+    const sweep = (s.v / totalD) * 2 * Math.PI;
     if (sweep <= 0) return;
-    ctx.beginPath();
-    ctx.moveTo(72, 72);
+    ctx.beginPath(); ctx.moveTo(72, 72);
     ctx.arc(72, 72, 58, start, start + sweep);
-    ctx.closePath();
-    ctx.fillStyle = s.c;
-    ctx.fill();
+    ctx.closePath(); ctx.fillStyle = s.c; ctx.fill();
     start += sweep;
   });
-  
-  // Círculo blanco central para efecto donut
-  ctx.beginPath();
-  ctx.arc(72, 72, 40, 0, 2 * Math.PI);
-  ctx.fillStyle = '#faf8f2'; // surface nueva paleta
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(72, 72, 40, 0, 2 * Math.PI);
+  ctx.fillStyle = '#faf8f2'; ctx.fill();
 }
+
+// Mantener compatibilidad con llamadas individuales
+function updateKPIs(data)  { /* delegado a updateKPIsAndDonut */ }
+function updateDonut(data) { /* delegado a updateKPIsAndDonut */ }
+
 
 // =============================================
 // CONSULTA RÁPIDA DE LOTE
@@ -1095,70 +1035,66 @@ function buscarLote() {
 
 
 function filterSaldo() {
-  if (!dataSaldo.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
+  if (!dataSaldo.length) { alert('Los datos aun no han cargado. Presiona Actualizar primero.'); return; }
   const q = document.getElementById('search-saldo').value.toLowerCase().trim();
-  if (!q) { renderSaldo(dataSaldo); return; }
-  renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q))));
+  if (!q) { renderVirtual('saldo', dataSaldo, renderSaldo); return; }
+  const filtered = _searchIndex.saldo.map((s, i) => s.includes(q) ? dataSaldo[i] : null).filter(Boolean);
+  renderVirtual('saldo', filtered, renderSaldo);
 }
 
 function clearFilterSaldo() {
   document.getElementById('search-saldo').value = '';
-  renderSaldo(dataSaldo);
+  renderVirtual('saldo', dataSaldo, renderSaldo);
 }
 
 function filterMov() {
-  if (!dataMov.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
+  if (!dataMov.length) { alert('Los datos aun no han cargado. Presiona Actualizar primero.'); return; }
   const q = document.getElementById('search-mov').value.toLowerCase().trim();
-  const fechaDesde = document.getElementById('fecha-desde').value; // YYYY-MM-DD
+  const fechaDesde = document.getElementById('fecha-desde').value;
   const fechaHasta = document.getElementById('fecha-hasta').value;
 
-  // Detectar columna de fecha dinámicamente
-  const cols = dataMov.length ? getMovCols(Object.keys(dataMov[0])) : {};
+  const cols = getMovColsCached(Object.keys(dataMov[0]));
   const colFecha = cols.fecha;
 
-  let filtered = dataMov.filter(r => {
-    // 1. Filtro de texto
-    const coincideTexto = !q || Object.values(r).some(v => String(v).toLowerCase().includes(q));
-
-    // 2. Filtro de fechas usando la columna detectada dinámicamente
+  // Usa índice para búsqueda de texto; aplica filtro de fecha solo a resultados que pasan texto
+  let filtered = dataMov.filter((r, i) => {
+    const coincideTexto = !q || _searchIndex.mov[i].includes(q);
     let cumpleDesde = true, cumpleHasta = true;
     if ((fechaDesde || fechaHasta) && colFecha) {
       const fechaRaw = String(r[colFecha] || '').trim();
-      // Intentar parsear DD/MM/YYYY o DD/MM/YYYY HH:MM
       const partes = fechaRaw.split(' ')[0].split('/');
       let fechaISO = '';
-      if (partes.length === 3 && partes[2].length === 4) {
+      if (partes.length === 3 && partes[2].length === 4)
         fechaISO = `${partes[2]}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}`;
-      } else if (partes.length === 3 && partes[2].length === 2) {
+      else if (partes.length === 3 && partes[2].length === 2)
         fechaISO = `20${partes[2]}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}`;
-      }
       cumpleDesde = !fechaDesde || fechaISO >= fechaDesde;
       cumpleHasta = !fechaHasta || fechaISO <= fechaHasta;
     }
-
     return coincideTexto && cumpleDesde && cumpleHasta;
   });
 
-  renderMov(filtered);
+  renderVirtual('mov', filtered, renderMov);
 }
 
 function clearFilterMov() {
   document.getElementById('search-mov').value = '';
   document.getElementById('fecha-desde').value = '';
   document.getElementById('fecha-hasta').value = '';
-  renderMov(dataMov);
+  renderVirtual('mov', dataMov, renderMov);
 }
 
 function filterAlertas() {
-  if (!dataSaldo.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
+  if (!dataSaldo.length) { alert('Los datos aun no han cargado. Presiona Actualizar primero.'); return; }
   const q   = document.getElementById('search-alertas').value.toLowerCase().trim();
   const whs = document.getElementById('filter-whs-alertas').value.toLowerCase().trim();
 
   if (!q && !whs) { renderAlertas(dataSaldo); return; }
 
-  renderAlertas(dataSaldo.filter(r => {
-    const coincideTexto = !q  || Object.values(r).some(v => String(v).toLowerCase().includes(q));
-    const coincideWhs   = !whs || String(r[getSaldoCols(Object.keys(r)).whs] || '').toLowerCase().includes(whs);
+  const cols = getSaldoColsCached(Object.keys(dataSaldo[0]));
+  renderAlertas(dataSaldo.filter((r, i) => {
+    const coincideTexto = !q  || _searchIndex.saldo[i].includes(q);
+    const coincideWhs   = !whs || String(r[cols.whs] || '').toLowerCase().includes(whs);
     return coincideTexto && coincideWhs;
   }));
 }
@@ -1168,7 +1104,6 @@ function clearFilterAlertas() {
   document.getElementById('filter-whs-alertas').value = '';
   renderAlertas(dataSaldo);
 }
-
 // =============================================
 // DEBOUNCE — evita render en cada tecla
 // =============================================
@@ -1176,6 +1111,9 @@ function debounce(fn, ms) {
   let t;
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
+const debouncedFilterSaldo = debounce(filterSaldo, 250);
+const debouncedFilterMov   = debounce(filterMov, 250);
+
 const debouncedFilterAlertas = debounce(filterAlertas, 250);
 const debouncedFilterBajas   = debounce(filterBajas, 250);
 
@@ -1184,15 +1122,17 @@ const debouncedFilterBajas   = debounce(filterBajas, 250);
 // =============================================
 const debouncedGlobalSearch = debounce(function(q) {
   if (!q) {
-    renderSaldo(dataSaldo);
-    renderMov(dataMov);
+    renderVirtual('saldo', dataSaldo, renderSaldo);
+    renderVirtual('mov', dataMov, renderMov);
     renderAlertas(dataSaldo);
     return;
   }
   const ql = q.toLowerCase();
-  renderSaldo(dataSaldo.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(ql))));
-  renderMov(dataMov.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(ql))));
-  renderAlertas(dataSaldo.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(ql))));
+  const filtSaldo = dataSaldo.filter((_, i) => _searchIndex.saldo[i] && _searchIndex.saldo[i].includes(ql));
+  const filtMov   = dataMov.filter((_, i)   => _searchIndex.mov[i]   && _searchIndex.mov[i].includes(ql));
+  renderVirtual('saldo', filtSaldo, renderSaldo);
+  renderVirtual('mov',   filtMov,   renderMov);
+  renderAlertas(filtSaldo);
 }, 300);
 
 document.getElementById('global-search').addEventListener('input', function() {
@@ -1200,8 +1140,73 @@ document.getElementById('global-search').addEventListener('input', function() {
 });
 
 // =============================================
-// CHECKBOX: SELECCIONAR TODO
+// VIRTUAL SCROLL — renderiza solo filas visibles (~200 activas)
 // =============================================
+const VIRTUAL_PAGE_SIZE = 200;
+let _vsOffset = { saldo: 0, mov: 0, bajas: 0 };
+let _vsData   = { saldo: [], mov: [], bajas: [] };
+
+function renderVirtual(type, data, renderFn) {
+  _vsData[type]   = data;
+  _vsOffset[type] = 0;
+  renderFn(data.slice(0, VIRTUAL_PAGE_SIZE), true);
+  const container = document.getElementById(
+    type === 'saldo' ? 'saldo-scroll-inner' :
+    type === 'mov'   ? 'mov-scroll-inner'   : 'bajas-scroll-inner'
+  );
+  if (container) {
+    container.onscroll = null;
+    container.onscroll = () => {
+      if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) {
+        _vsOffset[type] += VIRTUAL_PAGE_SIZE;
+        const next = _vsData[type].slice(_vsOffset[type], _vsOffset[type] + VIRTUAL_PAGE_SIZE);
+        if (next.length) renderFn(next, false);
+      }
+    };
+  }
+}
+
+// =============================================
+// CACHE DE COLUMNAS (evita Object.keys + getSaldoCols repetido)
+// =============================================
+let _saldoColsCache = null;
+let _movColsCache   = null;
+let _bajasColsCache = null;
+
+function getSaldoColsCached(keys) {
+  if (!_saldoColsCache) _saldoColsCache = getSaldoCols(keys);
+  return _saldoColsCache;
+}
+function getMovColsCached(keys) {
+  if (!_movColsCache) _movColsCache = getMovCols(keys);
+  return _movColsCache;
+}
+function getBajasColsCached(keys) {
+  if (!_bajasColsCache) _bajasColsCache = getBajasCols(keys);
+  return _bajasColsCache;
+}
+
+// INVALIDAR cache al recargar datos
+function invalidarCachesCols() {
+  _saldoColsCache = null;
+  _movColsCache   = null;
+  _bajasColsCache = null;
+}
+
+// =============================================
+// INDICE DE BUSQUEDA — evita Object.values() en cada tecla
+// =============================================
+let _searchIndex = { saldo: [], mov: [], bajas: [] };
+
+function buildSearchIndex(type, data) {
+  _searchIndex[type] = data.map(row => Object.values(row).join('\u0000').toLowerCase());
+}
+
+function searchWithIndex(type, q) {
+  return _searchIndex[type].map((str, i) => str.includes(q) ? _vsData[type][i] || null : null).filter(Boolean);
+}
+
+
 function toggleAllCheck(tbodyId, checked) {
   document.querySelectorAll('#' + tbodyId + ' .row-check').forEach(chk => chk.checked = checked);
 }
@@ -1372,7 +1377,8 @@ async function loadBajas(forceRefresh = true) {
     const text = await fetchCSV(URL_BAJAS, forceRefresh);
     const { headers, rows } = parseCSV(text);
     dataBajas = toObjects(headers, rows);
-    renderBajas(dataBajas);
+    buildSearchIndex('bajas', dataBajas);
+    renderVirtual('bajas', dataBajas, renderBajas);
     document.getElementById('last-update-bajas').textContent = ts();
   } catch(e) {
     document.getElementById('tbody-bajas').innerHTML = '<tr class="error-row"><td colspan="12">Error al cargar: ' + e.message + '</td></tr>';
@@ -1397,13 +1403,13 @@ function getBajasCols(keys) {
   };
 }
 
-function renderBajas(data) {
+function renderBajas(data, replace = true) {
   const tbody = document.getElementById('tbody-bajas');
   if (!data.length) {
     tbody.innerHTML = '<tr class="loading-row"><td colspan="12">Sin registros de bajas</td></tr>';
     return;
   }
-  const cols = getBajasCols(Object.keys(data[0]));
+  const cols = getBajasColsCached(Object.keys(data[0]));
   const frag = document.createDocumentFragment();
   data.forEach(row => {
     const days = daysToExpiry(row[cols.expira]);
@@ -1426,21 +1432,21 @@ function renderBajas(data) {
       + '<td class="px-3 py-2 border border-outline-variant">'                                   + (row[cols.usuario]  || '—') + '</td>';
     frag.appendChild(tr);
   });
-  tbody.innerHTML = '';
+  if (replace) tbody.innerHTML = '';
   tbody.appendChild(frag);
 }
 
 function filterBajas() {
-  if (!dataBajas.length) { alert('Los datos aún no han cargado. Presiona Actualizar primero.'); return; }
+  if (!dataBajas.length) { alert('Los datos aun no han cargado. Presiona Actualizar primero.'); return; }
   const q          = document.getElementById('search-bajas').value.trim().toLowerCase();
   const destino    = document.getElementById('filter-destino-bajas').value.trim().toLowerCase();
   const fechaDesde = document.getElementById('bajas-desde').value;
   const fechaHasta = document.getElementById('bajas-hasta').value;
-  const cols       = getBajasCols(Object.keys(dataBajas[0]));
+  const cols       = getBajasColsCached(Object.keys(dataBajas[0]));
   const colFecha   = cols.fecha;
 
-  const filtered = dataBajas.filter(r => {
-    const coincideTexto   = !q       || Object.values(r).some(v => String(v).toLowerCase().includes(q));
+  const filtered = dataBajas.filter((r, i) => {
+    const coincideTexto   = !q       || _searchIndex.bajas[i].includes(q);
     const coincideDestino = !destino || String(r[cols.destino] || '').toLowerCase().includes(destino);
     let cumpleDesde = true, cumpleHasta = true;
     if ((fechaDesde || fechaHasta) && colFecha) {
@@ -1456,7 +1462,7 @@ function filterBajas() {
     }
     return coincideTexto && coincideDestino && cumpleDesde && cumpleHasta;
   });
-  renderBajas(filtered);
+  renderVirtual('bajas', filtered, renderBajas);
 }
 
 function clearFilterBajas() {
@@ -1464,20 +1470,26 @@ function clearFilterBajas() {
   document.getElementById('filter-destino-bajas').value = '';
   document.getElementById('bajas-desde').value          = '';
   document.getElementById('bajas-hasta').value          = '';
-  renderBajas(dataBajas);
+  renderVirtual('bajas', dataBajas, renderBajas);
 }
 
 
-// Carga inicial: usa caché si existe (rápido), si no va a la red
+// Carga progresiva: saldo primero (tab activo), luego mov y bajas en background
 async function cargarTodo(forceRefresh = false) {
-  await Promise.allSettled([
-    loadSaldo(forceRefresh),
+  // Saldo es lo primero que el usuario ve — cargarlo antes
+  await loadSaldo(forceRefresh);
+  // Mov y Bajas en paralelo, pero sin bloquear el UI
+  Promise.allSettled([
     loadMov(forceRefresh),
     loadBajas(forceRefresh)
   ]);
 }
+// Solo auto-refresh si la pestaña está activa (evita refreshes innecesarios)
+function autoRefresh() {
+  if (!document.hidden) cargarTodo(true);
+}
 cargarTodo(false); // primera carga: usa caché si hay
-setInterval(() => cargarTodo(true), 600000); // auto-refresco: fuerza datos frescos
+setInterval(autoRefresh, 600000); // auto-refresco inteligente: solo si pestaña activa
 
 // =============================================
 // MODAL CAMPANILLA Y USUARIO

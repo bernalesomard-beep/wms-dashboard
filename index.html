@@ -68,6 +68,9 @@
   .editable-cell.editing { padding: 2px !important; background: #faf8f2; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
+  /* Ocultar secciones inactivas sin forzar reflow individual */
+  .nav-hidden { display: none !important; }
+
   /* Cuando la sección activa es saldo o movimiento, la columna de tablas ocupa todo el ancho */
   body[data-active="saldo"] .tables-col,
   body[data-active="movimiento"] .tables-col {
@@ -209,6 +212,9 @@
             <span class="last-update" id="last-update-saldo"></span>
           </div>
           <div class="flex items-center gap-3 flex-wrap">
+            <button onclick="abrirImportarSaldo()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors">
+              <span class="material-symbols-outlined text-[16px]">upload_file</span><span>Importar</span>
+            </button>
             <button onclick="exportCSV('saldo')" class="flex items-center gap-1 px-3 py-1 bg-surface border border-secondary text-secondary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors">
               <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
             </button>
@@ -1242,41 +1248,90 @@ function exportCSV(type) {
 }
 
 // =============================================
-// NAVEGACIÓN POR SECCIONES
+// NAVEGACIÓN POR SECCIONES — optimizada (sin reflow)
 // =============================================
+
+// Caché única: se arma una sola vez al cargar la página
+const _navCache = {
+  links: null,        // NodeList de links del nav
+  sectionMap: null,   // Map<sectionName, Element[]>
+  h2: null,
+  p: null,
+};
+
+function _buildNavCache() {
+  _navCache.links = document.querySelectorAll('nav a[data-nav]');
+  _navCache.h2    = document.querySelector('[data-section="dashboard"] h2');
+  _navCache.p     = document.querySelector('[data-section="dashboard"] p');
+
+  // Agrupar cada elemento por las secciones que declara
+  const map = { dashboard: [], saldo: [], movimiento: [], bajas: [] };
+  document.querySelectorAll('[data-section]').forEach(el => {
+    el.getAttribute('data-section').trim().split(/\s+/).forEach(s => {
+      if (map[s]) map[s].push(el);
+    });
+  });
+  _navCache.sectionMap = map;
+}
+
+// CSS en lugar de style.display — evita reflow forzado
+const _sectionStyle = document.createElement('style');
+_sectionStyle.id = 'nav-visibility';
+document.head.appendChild(_sectionStyle);
+
+let _currentSection = null;
+
 function showSection(section) {
-  // Marcar sección activa en body (para CSS)
+  if (section === _currentSection) return; // ya estamos aquí, no hacer nada
+  _currentSection = section;
+
+  // Construir caché la primera vez
+  if (!_navCache.links) _buildNavCache();
+
+  // 1. body data-active (para los overrides de CSS existentes)
   document.body.setAttribute('data-active', section);
 
-  // Actualizar nav activo
-  document.querySelectorAll('nav a[data-nav]').forEach(l => {
+  // 2. Nav links — solo cambia los dos que realmente cambian (activo anterior + nuevo)
+  _navCache.links.forEach(l => {
     const isActive = l.getAttribute('data-nav') === section;
-    l.classList.toggle('text-primary',         isActive);
-    l.classList.toggle('font-bold',            isActive);
-    l.classList.toggle('border-r-4',           isActive);
-    l.classList.toggle('border-primary',       isActive);
+    l.classList.toggle('text-primary',            isActive);
+    l.classList.toggle('font-bold',               isActive);
+    l.classList.toggle('border-r-4',              isActive);
+    l.classList.toggle('border-primary',          isActive);
     l.classList.toggle('bg-primary-container/10', isActive);
     l.classList.toggle('text-on-surface-variant', !isActive);
   });
 
-  // Mostrar/ocultar elementos según data-section
-  document.querySelectorAll('[data-section]').forEach(el => {
-    const sections = el.getAttribute('data-section').split(' ');
-    el.style.display = sections.includes(section) ? '' : 'none';
+  // 3. Mostrar/ocultar con una sola regla CSS — cero reflow individual
+  //    Genera ".nav-hidden { display:none !important }" y aplica/quita la clase
+  const map = _navCache.sectionMap;
+  const allSections = Object.keys(map);
+  // Marcar todos los elementos que NO pertenecen a esta sección
+  requestAnimationFrame(() => {
+    allSections.forEach(s => {
+      map[s].forEach(el => {
+        if (s === section) {
+          el.classList.remove('nav-hidden');
+        } else {
+          // Solo ocultar si no está en la sección activa
+          if (!map[section].includes(el)) {
+            el.classList.add('nav-hidden');
+          }
+        }
+      });
+    });
   });
 
-  // Actualizar título del header
+  // 4. Título (sin querySelector repetido)
   const titles = {
     dashboard:  { h: 'Resumen de Saldo (Stock)',   p: 'Estado actual de stock y movimientos logisticos.' },
-    saldo:      { h: 'Saldo de Inventario',         p: 'Consulta y filtra el stock actual por producto, lote o ubicación.' },
-    movimiento: { h: 'Movimientos',                 p: 'Historial de movimientos logísticos registrados.' },
+    saldo:      { h: 'Saldo de Inventario',         p: 'Consulta y filtra el stock actual por producto, lote o ubicacion.' },
+    movimiento: { h: 'Movimientos',                 p: 'Historial de movimientos logisticos registrados.' },
     bajas:      { h: 'Reporte de Bajas',            p: 'Productos dados de baja del inventario.' },
   };
   const t = titles[section] || titles.dashboard;
-  const h2 = document.querySelector('[data-section="dashboard"] h2');
-  const p  = document.querySelector('[data-section="dashboard"] p');
-  if (h2) h2.textContent = t.h;
-  if (p)  p.textContent  = t.p;
+  if (_navCache.h2) _navCache.h2.textContent = t.h;
+  if (_navCache.p)  _navCache.p.textContent  = t.p;
 }
 
 // Inicializar en dashboard
@@ -1587,7 +1642,208 @@ function mostrarModal(titulo, contenido) {
 function cerrarModal() {
   document.getElementById('wms-modal').classList.add('hidden');
 }
+
+// =============================================
+// IMPORTAR SALDO
+// =============================================
+let _importWorkbook = null;
+
+function abrirImportarSaldo() {
+  limpiarImportSaldo();
+  document.getElementById('import-status').textContent = '';
+  document.getElementById('modal-importar-saldo').classList.remove('hidden');
+}
+
+function cerrarImportarSaldo() {
+  document.getElementById('modal-importar-saldo').classList.add('hidden');
+  limpiarImportSaldo();
+}
+
+function limpiarImportSaldo() {
+  _importWorkbook = null;
+  document.getElementById('import-file-input').value = '';
+  document.getElementById('import-file-info').classList.add('hidden');
+  document.getElementById('import-sheet-selector').classList.add('hidden');
+  document.getElementById('import-status').textContent = '';
+  document.getElementById('btn-importar-saldo').disabled = true;
+}
+
+function handleImportDrop(e) {
+  e.preventDefault();
+  const dropzone = document.getElementById('import-dropzone');
+  dropzone.classList.remove('border-primary', 'bg-primary-container/10');
+  const file = e.dataTransfer.files[0];
+  if (file) handleImportFile(file);
+}
+
+function handleImportFile(file) {
+  if (!file) return;
+  const statusEl = document.getElementById('import-status');
+  statusEl.style.color = '#8a8470';
+  statusEl.textContent = 'Leyendo archivo...';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      _importWorkbook = XLSX.read(data, { type: 'array', cellDates: false, raw: false });
+
+      const sheets = _importWorkbook.SheetNames;
+      const selectEl = document.getElementById('import-sheet-select');
+      selectEl.innerHTML = sheets.map(s => `<option value="${s}">${s}</option>`).join('');
+
+      if (sheets.length > 1) {
+        document.getElementById('import-sheet-selector').classList.remove('hidden');
+      } else {
+        document.getElementById('import-sheet-selector').classList.add('hidden');
+      }
+
+      // Mostrar info del archivo
+      document.getElementById('import-file-name').textContent = file.name;
+      document.getElementById('import-file-info').classList.remove('hidden');
+      cargarHojaSeleccionada();
+    } catch(err) {
+      statusEl.style.color = '#ba1a1a';
+      statusEl.textContent = 'Error al leer el archivo: ' + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function cargarHojaSeleccionada() {
+  if (!_importWorkbook) return;
+  const sheetName = document.getElementById('import-sheet-select').value || _importWorkbook.SheetNames[0];
+  const ws = _importWorkbook.Sheets[sheetName];
+  const filas = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  const statusEl = document.getElementById('import-status');
+  const rowsEl   = document.getElementById('import-file-rows');
+
+  if (!filas || filas.length < 2) {
+    statusEl.style.color = '#ba1a1a';
+    statusEl.textContent = 'La hoja no tiene datos suficientes.';
+    document.getElementById('btn-importar-saldo').disabled = true;
+    rowsEl.textContent = '';
+    return;
+  }
+
+  const dataRows = filas.length - 1;
+  rowsEl.textContent = dataRows.toLocaleString() + ' filas de datos · hoja: ' + sheetName;
+  statusEl.style.color = '#2e7d32';
+  statusEl.textContent = '✓ Archivo listo para importar';
+  document.getElementById('btn-importar-saldo').disabled = false;
+}
+
+async function enviarImportarSaldo() {
+  if (!_importWorkbook) return;
+
+  const sheetName = document.getElementById('import-sheet-select').value || _importWorkbook.SheetNames[0];
+  const ws   = _importWorkbook.Sheets[sheetName];
+  const filas = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  const statusEl  = document.getElementById('import-status');
+  const btnImp    = document.getElementById('btn-importar-saldo');
+
+  if (!filas || filas.length < 2) {
+    statusEl.style.color = '#ba1a1a';
+    statusEl.textContent = 'El archivo no tiene datos suficientes.';
+    return;
+  }
+
+  btnImp.disabled = true;
+  btnImp.innerHTML = '<span class="material-symbols-outlined spin text-[14px]">sync</span> Importando...';
+  statusEl.style.color = '#584B09';
+  statusEl.textContent = 'Enviando ' + (filas.length - 1).toLocaleString() + ' filas al Sheet...';
+
+  try {
+    const payload = { accion: 'importarSaldo', filas: filas };
+    const resp = await fetch(URL_SCRIPT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    const json = await resp.json();
+
+    if (json.ok) {
+      statusEl.style.color = '#2e7d32';
+      statusEl.textContent = '✓ ' + json.mensaje;
+      btnImp.innerHTML = '<span class="material-symbols-outlined text-[14px]">check_circle</span> Importado';
+      // Refrescar tabla saldo automáticamente
+      setTimeout(() => {
+        cerrarImportarSaldo();
+        loadSaldo();
+      }, 1500);
+    } else {
+      statusEl.style.color = '#ba1a1a';
+      statusEl.textContent = '✗ ' + json.mensaje;
+      btnImp.disabled = false;
+      btnImp.innerHTML = '<span class="material-symbols-outlined text-[14px]">cloud_upload</span> Importar al Sheet';
+    }
+  } catch(err) {
+    statusEl.style.color = '#ba1a1a';
+    statusEl.textContent = 'Error de conexion: ' + err.message;
+    btnImp.disabled = false;
+    btnImp.innerHTML = '<span class="material-symbols-outlined text-[14px]">cloud_upload</span> Importar al Sheet';
+  }
+}
 </script>
+<!-- Modal Importar Saldo -->
+<div id="modal-importar-saldo" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+  <div onclick="cerrarImportarSaldo()" class="absolute inset-0 bg-black/40"></div>
+  <div class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 border border-outline-variant">
+    <div class="flex justify-between items-center mb-5">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">upload_file</span>
+        <h3 class="font-bold text-[16px] text-primary">Importar Saldo desde Excel</h3>
+      </div>
+      <button onclick="cerrarImportarSaldo()" class="text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div id="import-dropzone"
+      ondragover="event.preventDefault();this.classList.add('border-primary','bg-primary-container/10')"
+      ondragleave="this.classList.remove('border-primary','bg-primary-container/10')"
+      ondrop="handleImportDrop(event)"
+      onclick="document.getElementById('import-file-input').click()"
+      class="border-2 border-dashed border-outline rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-primary hover:bg-primary-container/10 mb-4">
+      <span class="material-symbols-outlined text-[40px] text-on-surface-variant mb-2 block">table_view</span>
+      <p class="font-bold text-[13px] text-on-surface">Arrastra tu archivo Excel aqui</p>
+      <p class="font-body-sm text-on-surface-variant text-[12px] mt-1">o haz clic para seleccionarlo</p>
+      <p class="font-label-data text-[11px] text-outline mt-2">.xlsx .xls .csv</p>
+    </div>
+    <input id="import-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleImportFile(this.files[0])">
+
+    <div id="import-file-info" class="hidden mb-4 flex items-center gap-3 bg-surface-container-low rounded-lg px-4 py-3 border border-outline-variant">
+      <span class="material-symbols-outlined text-primary text-[20px]">description</span>
+      <div class="flex-1 min-w-0">
+        <p id="import-file-name" class="font-bold text-[12px] text-on-surface truncate"></p>
+        <p id="import-file-rows" class="font-label-data text-[11px] text-on-surface-variant"></p>
+      </div>
+      <button onclick="limpiarImportSaldo()" class="text-on-surface-variant hover:text-error transition-colors">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+
+    <div id="import-sheet-selector" class="hidden mb-4">
+      <label class="block text-[12px] font-bold text-on-surface-variant mb-1">Hoja del archivo</label>
+      <select id="import-sheet-select" onchange="cargarHojaSeleccionada()" class="w-full bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none"></select>
+    </div>
+
+    <p id="import-status" class="text-[12px] font-bold min-h-[18px] mb-3"></p>
+
+    <div class="flex gap-3">
+      <button onclick="cerrarImportarSaldo()" class="flex-1 py-2 border border-outline text-on-surface-variant font-bold rounded-lg text-[13px] hover:bg-surface-container-high transition-colors">
+        Cancelar
+      </button>
+      <button id="btn-importar-saldo" onclick="enviarImportarSaldo()" disabled
+        class="flex-1 flex items-center justify-center gap-1 py-2 bg-primary text-white font-bold rounded-lg text-[13px] hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+        <span class="material-symbols-outlined text-[14px]">cloud_upload</span> Importar al Sheet
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Editar Movimiento -->
 <div id="modal-edit-mov" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
   <div onclick="cerrarEditarMov()" class="absolute inset-0 bg-black/40"></div>

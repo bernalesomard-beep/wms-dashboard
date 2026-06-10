@@ -835,15 +835,14 @@ function renderMov(data) {
     const idAttr  = id ? `data-id="${id}"` : '';
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-surface-container-low transition-colors';
-    tr.title = 'Doble clic en Ubic. Destino o Cantidad para editar';
     tr.innerHTML =
         `<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>`
       + `<td class="px-3 py-3 font-label-data whitespace-nowrap border border-outline-variant">${row[cols.fecha]||'—'}</td>`
       + `<td class="px-3 py-3 font-label-data border border-outline-variant">${row[cols.codigo]||'—'}</td>`
       + `<td class="px-3 py-3 font-label-data border border-outline-variant">${row[cols.bpcs]||'—'}</td>`
       + `<td class="px-3 py-3 border border-outline-variant">${row[cols.origen]||'—'}</td>`
-      + `<td class="px-3 py-3 font-label-data border border-outline-variant editable-cell" ${idAttr} data-campo="rtolc" data-original="${destino}" ondblclick="editarCeldaMov(this)" title="Doble clic para editar">${destino||'—'}</td>`
-      + `<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant editable-cell" ${idAttr} data-campo="rqtyt" data-original="${cantidad}" ondblclick="editarCeldaMov(this)" title="Doble clic para editar">${cantidad||'0'}</td>`
+      + `<td class="px-3 py-3 font-label-data border border-outline-variant">${destino||'—'}</td>`
+      + `<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">${cantidad||'0'}</td>`
       + `<td class="px-3 py-3 border border-outline-variant">${row[cols.usuario]||'—'}</td>`;
     frag.appendChild(tr);
   });

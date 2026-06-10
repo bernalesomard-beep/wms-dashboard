@@ -268,6 +268,9 @@
             <button onclick="exportCSV('mov')" class="flex items-center gap-1 px-3 py-1 bg-surface border border-secondary text-secondary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors">
               <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
             </button>
+            <button onclick="exportMovTRFMAS()" class="flex items-center gap-1 px-3 py-1 bg-surface border border-primary text-primary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">table_view</span><span>TRFMAS</span>
+            </button>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
               <input id="search-mov" oninput="debouncedFilterMov()" onkeydown="if(event.key==='Enter')filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
@@ -1293,8 +1296,61 @@ function exportCSV(type) {
 }
 
 // =============================================
-// NAVEGACIÓN POR SECCIONES
+// EXPORTAR MOVIMIENTOS — FORMATO TRFMAS (columnas originales del Sheet)
 // =============================================
+function exportMovTRFMAS() {
+  if (!_vsData.mov.length && !dataMov.length) {
+    alert('No hay datos de movimientos para exportar. Presiona Actualizar primero.');
+    return;
+  }
+
+  // Verificar si hay casillas seleccionadas
+  const allVisibleRows = Array.from(document.querySelectorAll('#tbody-mov tr')).filter(tr =>
+    !tr.classList.contains('loading-row') && !tr.classList.contains('error-row')
+  );
+  const selectedRows = allVisibleRows.filter(tr => tr.querySelector('.row-check')?.checked);
+
+  let source;
+  if (selectedRows.length > 0) {
+    // Mapear filas DOM seleccionadas a sus objetos de datos en _vsData.mov
+    source = selectedRows.map(tr => {
+      const idx = allVisibleRows.indexOf(tr);
+      return _vsData.mov[idx] || null;
+    }).filter(Boolean);
+  } else {
+    // Sin selección: exportar todos los datos del filtro activo
+    source = _vsData.mov.length ? _vsData.mov : dataMov;
+  }
+
+  if (!source.length) { alert('No hay datos para exportar.'); return; }
+
+  // Exportar todas las columnas tal como vienen del Google Sheet (sin renombrar)
+  const ws = XLSX.utils.json_to_sheet(source);
+
+  // Ajustar ancho de columnas automáticamente
+  const headers = Object.keys(source[0]);
+  ws['!cols'] = headers.map(col => {
+    const maxLen = Math.max(col.length, ...source.map(r => String(r[col] || '').length));
+    return { wch: Math.min(maxLen + 2, 50) };
+  });
+
+  // Estilo de encabezados
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const cellAddr = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (!ws[cellAddr]) continue;
+    ws[cellAddr].s = {
+      font:      { bold: true, color: { rgb: 'FFFFFF' } },
+      fill:      { fgColor: { rgb: '584B09' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    };
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'TRFMAS');
+  XLSX.writeFile(wb, 'TRFMAS.xlsx');
+}
+
 // Pre-indexar elementos por sección UNA sola vez (evita querySelectorAll repetido)
 const _secEls = {};
 function _initSecEls() {

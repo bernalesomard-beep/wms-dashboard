@@ -68,9 +68,6 @@
   .editable-cell.editing { padding: 2px !important; background: #faf8f2; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  /* Ocultar secciones inactivas sin forzar reflow individual */
-  .nav-hidden { display: none !important; }
-
   /* Cuando la sección activa es saldo o movimiento, la columna de tablas ocupa todo el ancho */
   body[data-active="saldo"] .tables-col,
   body[data-active="movimiento"] .tables-col {
@@ -452,7 +449,7 @@
   </div>
 
   <!-- SECCIÓN REPORTE DE BAJAS -->
-  <div data-section="bajas" style="display:none">
+  <div data-section="bajas">
     <div class="bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden">
       <div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center flex-wrap gap-3">
         <div>
@@ -723,14 +720,15 @@ function renderSaldo(data) {
   }
   
   const cols = getSaldoCols(Object.keys(data[0]));
-  let html = '';
+  const frag = document.createDocumentFragment();
   
   data.forEach(row => {
     const days = daysToExpiry(row[cols.expira]);
     const rowClass = days !== null && days < 0 ? 'text-error font-medium' : days !== null && days <= ALERT_DAYS ? 'text-secondary font-medium' : 'text-on-surface';
-    
-    html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
-      + '<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-surface-container-low transition-colors ' + rowClass;
+    tr.innerHTML =
+        '<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.codigo]||'—') + '</td>'
       + '<td class="px-3 py-3 border border-outline-variant">' + (row[cols.desc]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.whs]||'—') + '</td>'
@@ -739,10 +737,11 @@ function renderSaldo(data) {
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.lote_fisico]||'—') + '</td>'
       + '<td class="px-3 py-3 font-label-data border border-outline-variant">' + (row[cols.expira]||'—') + '</td>'
       + '<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">' + (row[cols.cantidad]||'0') + '</td>'
-      + '<td class="px-3 py-3 text-center border border-outline-variant">' + statusBadge(days) + '</td>'
-      + '</tr>';
+      + '<td class="px-3 py-3 text-center border border-outline-variant">' + statusBadge(days) + '</td>';
+    frag.appendChild(tr);
   });
-  tbody.innerHTML = html;
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
 }
 
 // =============================================
@@ -827,26 +826,29 @@ function renderMov(data) {
   if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin movimientos registrados</td></tr>'; return; }
   
   const cols = getMovCols(Object.keys(data[0]));
-  let html = '';
+  const frag = document.createDocumentFragment();
   
   data.forEach(row => {
     const id      = row['ID'] || row['id'] || '';
     const destino = row[cols.destino] || '';
     const cantidad= row[cols.cantidad] || '';
     const idAttr  = id ? `data-id="${id}"` : '';
-
-    html += `<tr class="hover:bg-surface-container-low transition-colors" title="Doble clic en Ubic. Destino o Cantidad para editar">`
-      + `<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>`
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-surface-container-low transition-colors';
+    tr.title = 'Doble clic en Ubic. Destino o Cantidad para editar';
+    tr.innerHTML =
+        `<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>`
       + `<td class="px-3 py-3 font-label-data whitespace-nowrap border border-outline-variant">${row[cols.fecha]||'—'}</td>`
       + `<td class="px-3 py-3 font-label-data border border-outline-variant">${row[cols.codigo]||'—'}</td>`
       + `<td class="px-3 py-3 font-label-data border border-outline-variant">${row[cols.bpcs]||'—'}</td>`
       + `<td class="px-3 py-3 border border-outline-variant">${row[cols.origen]||'—'}</td>`
       + `<td class="px-3 py-3 font-label-data border border-outline-variant editable-cell" ${idAttr} data-campo="rtolc" data-original="${destino}" ondblclick="editarCeldaMov(this)" title="Doble clic para editar">${destino||'—'}</td>`
       + `<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant editable-cell" ${idAttr} data-campo="rqtyt" data-original="${cantidad}" ondblclick="editarCeldaMov(this)" title="Doble clic para editar">${cantidad||'0'}</td>`
-      + `<td class="px-3 py-3 border border-outline-variant">${row[cols.usuario]||'—'}</td>`
-      + `</tr>`;
+      + `<td class="px-3 py-3 border border-outline-variant">${row[cols.usuario]||'—'}</td>`;
+    frag.appendChild(tr);
   });
-  tbody.innerHTML = html;
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
 }
 
 // =============================================
@@ -1248,51 +1250,35 @@ function exportCSV(type) {
 }
 
 // =============================================
-// NAVEGACIÓN POR SECCIONES — optimizada (sin reflow)
+// NAVEGACIÓN POR SECCIONES
 // =============================================
-
-// Caché única: se arma una sola vez al cargar la página
-const _navCache = {
-  links: null,        // NodeList de links del nav
-  sectionMap: null,   // Map<sectionName, Element[]>
-  h2: null,
-  p: null,
-};
-
-function _buildNavCache() {
-  _navCache.links = document.querySelectorAll('nav a[data-nav]');
-  _navCache.h2    = document.querySelector('[data-section="dashboard"] h2');
-  _navCache.p     = document.querySelector('[data-section="dashboard"] p');
-
-  // Agrupar cada elemento por las secciones que declara
-  const map = { dashboard: [], saldo: [], movimiento: [], bajas: [] };
+// Pre-indexar elementos por sección UNA sola vez (evita querySelectorAll repetido)
+const _secEls = {};
+function _initSecEls() {
   document.querySelectorAll('[data-section]').forEach(el => {
     el.getAttribute('data-section').trim().split(/\s+/).forEach(s => {
-      if (map[s]) map[s].push(el);
+      if (!_secEls[s]) _secEls[s] = [];
+      _secEls[s].push(el);
     });
   });
-  _navCache.sectionMap = map;
 }
 
-// CSS en lugar de style.display — evita reflow forzado
-const _sectionStyle = document.createElement('style');
-_sectionStyle.id = 'nav-visibility';
-document.head.appendChild(_sectionStyle);
-
-let _currentSection = null;
+let _activeSection = null;
 
 function showSection(section) {
-  if (section === _currentSection) return; // ya estamos aquí, no hacer nada
-  _currentSection = section;
+  if (section === _activeSection) return;
 
-  // Construir caché la primera vez
-  if (!_navCache.links) _buildNavCache();
+  // Construir índice la primera vez
+  if (!Object.keys(_secEls).length) _initSecEls();
 
-  // 1. body data-active (para los overrides de CSS existentes)
+  const prev = _activeSection;
+  _activeSection = section;
+
+  // 1. body data-active (para los overrides CSS de grid)
   document.body.setAttribute('data-active', section);
 
-  // 2. Nav links — solo cambia los dos que realmente cambian (activo anterior + nuevo)
-  _navCache.links.forEach(l => {
+  // 2. Nav links
+  document.querySelectorAll('nav a[data-nav]').forEach(l => {
     const isActive = l.getAttribute('data-nav') === section;
     l.classList.toggle('text-primary',            isActive);
     l.classList.toggle('font-bold',               isActive);
@@ -1302,36 +1288,34 @@ function showSection(section) {
     l.classList.toggle('text-on-surface-variant', !isActive);
   });
 
-  // 3. Mostrar/ocultar con una sola regla CSS — cero reflow individual
-  //    Genera ".nav-hidden { display:none !important }" y aplica/quita la clase
-  const map = _navCache.sectionMap;
-  const allSections = Object.keys(map);
-  // Marcar todos los elementos que NO pertenecen a esta sección
-  requestAnimationFrame(() => {
-    allSections.forEach(s => {
-      map[s].forEach(el => {
-        if (s === section) {
-          el.classList.remove('nav-hidden');
-        } else {
-          // Solo ocultar si no está en la sección activa
-          if (!map[section].includes(el)) {
-            el.classList.add('nav-hidden');
-          }
-        }
-      });
+  // 3. Mostrar/ocultar: solo toca los elementos que realmente cambian
+  //    Oculta los del grupo anterior, muestra los del nuevo
+  const allSections = Object.keys(_secEls);
+  allSections.forEach(s => {
+    const show = s === section;
+    _secEls[s].forEach(el => {
+      el.style.display = show ? '' : 'none';
     });
   });
+  // Los elementos que aparecen en MÚLTIPLES secciones (ej: "dashboard saldo")
+  // deben quedar visibles si la sección activa es cualquiera de las suyas
+  document.querySelectorAll('[data-section*=" "]').forEach(el => {
+    const secs = el.getAttribute('data-section').trim().split(/\s+/);
+    el.style.display = secs.includes(section) ? '' : 'none';
+  });
 
-  // 4. Título (sin querySelector repetido)
+  // 4. Título
   const titles = {
-    dashboard:  { h: 'Resumen de Saldo (Stock)',   p: 'Estado actual de stock y movimientos logisticos.' },
-    saldo:      { h: 'Saldo de Inventario',         p: 'Consulta y filtra el stock actual por producto, lote o ubicacion.' },
-    movimiento: { h: 'Movimientos',                 p: 'Historial de movimientos logisticos registrados.' },
-    bajas:      { h: 'Reporte de Bajas',            p: 'Productos dados de baja del inventario.' },
+    dashboard:  { h: 'Resumen de Saldo (Stock)',              p: 'Estado actual de stock y movimientos logisticos.' },
+    saldo:      { h: 'Saldo de Inventario',                   p: 'Consulta y filtra el stock actual por producto, lote o ubicacion.' },
+    movimiento: { h: 'Movimientos',                           p: 'Historial de movimientos logisticos registrados.' },
+    bajas:      { h: 'Reporte de Bajas',                      p: 'Productos dados de baja del inventario.' },
   };
   const t = titles[section] || titles.dashboard;
-  if (_navCache.h2) _navCache.h2.textContent = t.h;
-  if (_navCache.p)  _navCache.p.textContent  = t.p;
+  const h2 = document.querySelector('h2.font-headline-lg');
+  const p  = h2 && h2.nextElementSibling;
+  if (h2) h2.textContent = t.h;
+  if (p)  p.textContent  = t.p;
 }
 
 // Inicializar en dashboard
@@ -1387,12 +1371,14 @@ function renderBajas(data) {
     return;
   }
   const cols = getBajasCols(Object.keys(data[0]));
-  let html = '';
+  const frag = document.createDocumentFragment();
   data.forEach(row => {
     const days = daysToExpiry(row[cols.expira]);
     const rowClass = days !== null && days < 0 ? 'text-error' : days !== null && days <= 30 ? 'text-secondary' : '';
-    html += '<tr class="hover:bg-surface-container-low transition-colors ' + rowClass + '">'
-      + '<td class="px-3 py-2 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-surface-container-low transition-colors ' + rowClass;
+    tr.innerHTML =
+        '<td class="px-3 py-2 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>'
       + '<td class="px-3 py-2 font-label-data whitespace-nowrap border border-outline-variant">' + (row[cols.fecha]    || '—') + '</td>'
       + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.codigo]   || '—') + '</td>'
       + '<td class="px-3 py-2 border border-outline-variant">'                                   + (row[cols.desc]     || '—') + '</td>'
@@ -1404,10 +1390,11 @@ function renderBajas(data) {
       + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.origen]   || '—') + '</td>'
       + '<td class="px-3 py-2 font-label-data border border-outline-variant">'                   + (row[cols.destino]  || '—') + '</td>'
       + '<td class="px-3 py-2 text-center border border-outline-variant">'                       + (row[cols.estatus]  || '—') + '</td>'
-      + '<td class="px-3 py-2 border border-outline-variant">'                                   + (row[cols.usuario]  || '—') + '</td>'
-      + '</tr>';
+      + '<td class="px-3 py-2 border border-outline-variant">'                                   + (row[cols.usuario]  || '—') + '</td>';
+    frag.appendChild(tr);
   });
-  tbody.innerHTML = html;
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
 }
 
 function filterBajas() {

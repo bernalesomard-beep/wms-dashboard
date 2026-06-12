@@ -207,13 +207,29 @@
             <h3 class="font-headline-md text-headline-md text-primary">Saldo de Inventario</h3>
             <span class="last-update" id="last-update-saldo"></span>
           </div>
-          <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-2 flex-wrap">
             <button onclick="exportCSV('saldo')" class="flex items-center gap-1 px-3 py-1 bg-surface border border-secondary text-secondary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors">
               <span class="material-symbols-outlined text-[16px]">download</span><span>Exportar</span>
             </button>
+            <!-- Buscar general -->
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
-              <input id="search-saldo" oninput="debouncedFilterSaldo()" onkeydown="if(event.key==='Enter')filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
+              <input id="search-saldo" oninput="debouncedFilterSaldo()" onkeydown="if(event.key==='Enter')filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-36" placeholder="Buscar...">
+            </div>
+            <!-- Filtro WHS -->
+            <div class="relative flex items-center">
+              <span class="material-symbols-outlined absolute left-2 text-[14px] text-on-surface-variant">warehouse</span>
+              <input id="filter-whs-saldo" oninput="debouncedFilterSaldo()" onkeydown="if(event.key==='Enter')filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-28" placeholder="WHS...">
+            </div>
+            <!-- Filtro Código -->
+            <div class="relative flex items-center">
+              <span class="material-symbols-outlined absolute left-2 text-[14px] text-on-surface-variant">qr_code</span>
+              <input id="filter-codigo-saldo" oninput="debouncedFilterSaldo()" onkeydown="if(event.key==='Enter')filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-28" placeholder="Código...">
+            </div>
+            <!-- Filtro Lote -->
+            <div class="relative flex items-center">
+              <span class="material-symbols-outlined absolute left-2 text-[14px] text-on-surface-variant">tag</span>
+              <input id="filter-lote-saldo" oninput="debouncedFilterSaldo()" onkeydown="if(event.key==='Enter')filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-28" placeholder="Lote...">
             </div>
             <button onclick="filterSaldo()" class="flex items-center gap-1 px-3 py-1 bg-primary text-white font-bold rounded text-[12px] hover:opacity-90 transition-colors whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">filter_alt</span> Filtrar
@@ -1039,14 +1055,32 @@ function buscarLote() {
 
 function filterSaldo() {
   if (!dataSaldo.length) { alert('Los datos aun no han cargado. Presiona Actualizar primero.'); return; }
-  const q = document.getElementById('search-saldo').value.toLowerCase().trim();
-  if (!q) { renderVirtual('saldo', dataSaldo, renderSaldo); return; }
-  const filtered = _searchIndex.saldo.map((s, i) => s.includes(q) ? dataSaldo[i] : null).filter(Boolean);
+  const q      = document.getElementById('search-saldo').value.toLowerCase().trim();
+  const whs    = document.getElementById('filter-whs-saldo').value.toLowerCase().trim();
+  const codigo = document.getElementById('filter-codigo-saldo').value.toLowerCase().trim();
+  const lote   = document.getElementById('filter-lote-saldo').value.toLowerCase().trim();
+
+  if (!q && !whs && !codigo && !lote) { renderVirtual('saldo', dataSaldo, renderSaldo); return; }
+
+  const cols = getSaldoColsCached(Object.keys(dataSaldo[0]));
+
+  const filtered = dataSaldo.filter((r, i) => {
+    const coincideTexto  = !q      || _searchIndex.saldo[i].includes(q);
+    const coincideWhs    = !whs    || String(r[cols.whs]         || '').toLowerCase().includes(whs);
+    const coincideCodigo = !codigo || String(r[cols.codigo]      || '').toLowerCase().includes(codigo);
+    const coincideLote   = !lote   || String(r[cols.lote_bpcs]   || '').toLowerCase().includes(lote)
+                                   || String(r[cols.lote_fisico] || '').toLowerCase().includes(lote);
+    return coincideTexto && coincideWhs && coincideCodigo && coincideLote;
+  });
+
   renderVirtual('saldo', filtered, renderSaldo);
 }
 
 function clearFilterSaldo() {
-  document.getElementById('search-saldo').value = '';
+  document.getElementById('search-saldo').value         = '';
+  document.getElementById('filter-whs-saldo').value     = '';
+  document.getElementById('filter-codigo-saldo').value  = '';
+  document.getElementById('filter-lote-saldo').value    = '';
   renderVirtual('saldo', dataSaldo, renderSaldo);
 }
 

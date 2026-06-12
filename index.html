@@ -224,7 +224,7 @@
             <!-- Filtro Código -->
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[14px] text-on-surface-variant">qr_code</span>
-              <input id="filter-codigo-saldo" oninput="debouncedFilterSaldo()" onkeydown="if(event.key==='Enter')filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-28" placeholder="Código...">
+              <input id="filter-codigo-saldo" oninput="debouncedFilterSaldo()" onkeydown="if(event.key==='Enter')filterSaldo()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-28" placeholder="Cód1, Cód2...">
             </div>
             <!-- Filtro Lote -->
             <div class="relative flex items-center">
@@ -1057,19 +1057,23 @@ function filterSaldo() {
   if (!dataSaldo.length) { alert('Los datos aun no han cargado. Presiona Actualizar primero.'); return; }
   const q      = document.getElementById('search-saldo').value.toLowerCase().trim();
   const whs    = document.getElementById('filter-whs-saldo').value.toLowerCase().trim();
-  const codigo = document.getElementById('filter-codigo-saldo').value.toLowerCase().trim();
+  const codigoRaw = document.getElementById('filter-codigo-saldo').value.toLowerCase().trim();
   const lote   = document.getElementById('filter-lote-saldo').value.toLowerCase().trim();
 
-  if (!q && !whs && !codigo && !lote) { renderVirtual('saldo', dataSaldo, renderSaldo); return; }
+  // Soporte multi-código: separar por coma y limpiar espacios
+  const codigos = codigoRaw ? codigoRaw.split(',').map(c => c.trim()).filter(Boolean) : [];
+
+  if (!q && !whs && !codigos.length && !lote) { renderVirtual('saldo', dataSaldo, renderSaldo); return; }
 
   const cols = getSaldoColsCached(Object.keys(dataSaldo[0]));
 
   const filtered = dataSaldo.filter((r, i) => {
-    const coincideTexto  = !q      || _searchIndex.saldo[i].includes(q);
-    const coincideWhs    = !whs    || String(r[cols.whs]         || '').toLowerCase().includes(whs);
-    const coincideCodigo = !codigo || String(r[cols.codigo]      || '').toLowerCase().includes(codigo);
-    const coincideLote   = !lote   || String(r[cols.lote_bpcs]   || '').toLowerCase().includes(lote)
-                                   || String(r[cols.lote_fisico] || '').toLowerCase().includes(lote);
+    const coincideTexto  = !q             || _searchIndex.saldo[i].includes(q);
+    const coincideWhs    = !whs           || String(r[cols.whs]         || '').toLowerCase().includes(whs);
+    const valorCodigo    = String(r[cols.codigo] || '').toLowerCase();
+    const coincideCodigo = !codigos.length || codigos.some(c => valorCodigo.includes(c));
+    const coincideLote   = !lote          || String(r[cols.lote_bpcs]   || '').toLowerCase().includes(lote)
+                                          || String(r[cols.lote_fisico] || '').toLowerCase().includes(lote);
     return coincideTexto && coincideWhs && coincideCodigo && coincideLote;
   });
 
@@ -1264,13 +1268,30 @@ function exportCSV(type) {
   let data, filename, sheetName;
 
   if (type === 'saldo') {
-    const rows = getRowsForExport('tbody-saldo');
-    data = rows.map(tr => {
-      const tds = tr.querySelectorAll('td');
-      return { CODIGO: tds[1]?.innerText, DESCRIPCION: tds[2]?.innerText, WHS: tds[3]?.innerText,
-               UBICACION: tds[4]?.innerText, LOTE_BPCS: tds[5]?.innerText, LOTE_FISICO: tds[6]?.innerText,
-               EXPIRA: tds[7]?.innerText, CANTIDAD: tds[8]?.innerText, ESTADO: tds[9]?.innerText };
-    });
+    // Exportar desde _vsData.saldo para incluir TODOS los registros filtrados,
+    // no solo los visibles en pantalla (virtual scroll)
+    const checkedRows = Array.from(document.querySelectorAll('#tbody-saldo .row-check:checked'));
+    let source;
+    if (checkedRows.length > 0) {
+      // Si hay checkboxes seleccionados, exportar solo esos (leídos del DOM)
+      source = checkedRows.map(chk => {
+        const tds = chk.closest('tr').querySelectorAll('td');
+        return { CODIGO: tds[1]?.innerText, DESCRIPCION: tds[2]?.innerText, WHS: tds[3]?.innerText,
+                 UBICACION: tds[4]?.innerText, LOTE_BPCS: tds[5]?.innerText, LOTE_FISICO: tds[6]?.innerText,
+                 EXPIRA: tds[7]?.innerText, CANTIDAD: tds[8]?.innerText, ESTADO: tds[9]?.innerText };
+      });
+    } else {
+      // Sin selección: exportar todos los filtrados desde _vsData (completo)
+      const cols = getSaldoColsCached(Object.keys((_vsData.saldo[0] || dataSaldo[0] || {})));
+      source = (_vsData.saldo.length ? _vsData.saldo : dataSaldo).map(row => {
+        const days = daysToExpiry(row[cols.expira]);
+        const estado = days === null ? '—' : days < 0 ? 'VENCIDO' : days === 0 ? 'HOY' : days <= 60 ? 'CRITICO (' + days + 'd)' : days <= 90 ? 'PROXIMO (' + days + 'd)' : 'OK';
+        return { CODIGO: row[cols.codigo]||'—', DESCRIPCION: row[cols.desc]||'—', WHS: row[cols.whs]||'—',
+                 UBICACION: row[cols.ubic]||'—', LOTE_BPCS: row[cols.lote_bpcs]||'—', LOTE_FISICO: row[cols.lote_fisico]||'—',
+                 EXPIRA: row[cols.expira]||'—', CANTIDAD: row[cols.cantidad]||'0', ESTADO: estado };
+      });
+    }
+    data = source;
     filename = 'saldo_inventario.xlsx';
     sheetName = 'Saldo';
   } else if (type === 'mov') {

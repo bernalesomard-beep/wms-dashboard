@@ -760,7 +760,7 @@ async function loadSaldo(forceRefresh = true) {
 function renderSaldo(data, replace = true) {
   const tbody = document.getElementById('tbody-saldo');
   if (!data.length) { 
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin registros</td></tr>'; 
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin saldo en inventario</td></tr>'; 
     return; 
   }
   

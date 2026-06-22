@@ -14,19 +14,19 @@
     theme: {
       extend: {
         "colors": {
-          "primary-container": "#3d3506","on-error-container": "#93000a","surface-variant": "#e8e4d9",
-          "surface-tint": "#949201","primary-fixed": "#f0e9c8","inverse-on-surface": "#f5f1e8",
-          "on-primary-fixed": "#13100B","surface-container-high": "#ede8da","on-secondary": "#ffffff",
-          "on-background": "#13100B","surface-dim": "#d8d3c5","surface-bright": "#faf8f2",
-          "background": "#f5f1e8","secondary-fixed-dim": "#dfbbe4","on-primary-container": "#f0e9c8",
-          "on-secondary-fixed": "#2a1231","surface": "#faf8f2","error": "#ba1a1a","on-error": "#ffffff",
-          "inverse-surface": "#2a2518","primary-fixed-dim": "#d4c47a","primary": "#584B09",
-          "outline-variant": "#c8c2a8","surface-container-lowest": "#ffffff","on-surface-variant": "#4a4535",
-          "inverse-primary": "#d4c47a","tertiary-container": "#734934","secondary-fixed": "#fbd7ff",
-          "secondary": "#725478","surface-container": "#edeadc","on-secondary-container": "#76587c",
-          "tertiary-fixed": "#ffdbcb","secondary-container": "#f9d4fe","outline": "#8a8470",
-          "on-tertiary": "#ffffff","error-container": "#ffdad6","surface-container-highest": "#e8e4d9",
-          "tertiary": "#58331f","surface-container-low": "#f3f0e5","on-primary": "#ffffff","on-surface": "#13100B"
+          "primary-container": "#0a2e1a","on-error-container": "#93000a","surface-variant": "#dde8e2",
+          "surface-tint": "#1a7a42","primary-fixed": "#d4ede0","inverse-on-surface": "#eef5f0",
+          "on-primary-fixed": "#081a0f","surface-container-high": "#dce8e1","on-secondary": "#ffffff",
+          "on-background": "#0b1f13","surface-dim": "#c8d8cf","surface-bright": "#f4faf6",
+          "background": "#eef5f0","secondary-fixed-dim": "#a3c8b3","on-primary-container": "#d4ede0",
+          "on-secondary-fixed": "#0d2619","surface": "#f4faf6","error": "#ba1a1a","on-error": "#ffffff",
+          "inverse-surface": "#1a2e22","primary-fixed-dim": "#6abf8a","primary": "#0f6b35",
+          "outline-variant": "#adc4b5","surface-container-lowest": "#ffffff","on-surface-variant": "#3a5244",
+          "inverse-primary": "#6abf8a","tertiary-container": "#1a4a30","secondary-fixed": "#c8e6d4",
+          "secondary": "#2e7d52","surface-container": "#e2ede6","on-secondary-container": "#2e7d52",
+          "tertiary-fixed": "#c1e0cc","secondary-container": "#c8e6d4","outline": "#6a9478",
+          "on-tertiary": "#ffffff","error-container": "#ffdad6","surface-container-highest": "#d8e8de",
+          "tertiary": "#1a5c38","surface-container-low": "#eaf3ed","on-primary": "#ffffff","on-surface": "#0b1f13"
         },
         "fontFamily": {
           "table-header": ["Hanken Grotesk"],"headline-lg": ["Hanken Grotesk"],"body-md": ["Hanken Grotesk"],
@@ -50,22 +50,60 @@
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   body { font-family: 'Hanken Grotesk', sans-serif; }
   .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: #f3f0e5; border-radius: 10px; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background: #584B09; border-radius: 10px; border: 2px solid #f3f0e5; }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #949201; }
-  thead th { position: sticky; top: 0; z-index: 10; background-color: #584B09; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #eaf3ed; border-radius: 10px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #0f6b35; border-radius: 10px; border: 2px solid #eaf3ed; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #1a7a42; }
+  thead th { position: sticky; top: 0; z-index: 10; background-color: #0f6b35; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { animation: spin 1s linear infinite; }
-  .loading-row td { text-align: center; padding: 2rem; color: #8a8470; font-family: 'Hanken Grotesk', sans-serif; }
+  .loading-row td { text-align: center; padding: 2rem; color: #6a9478; font-family: 'Hanken Grotesk', sans-serif; }
   .error-row td { text-align: center; padding: 2rem; color: #ba1a1a; font-family: 'Hanken Grotesk', sans-serif; }
   /* Performance: compositing hint for scroll containers */
   tbody tr { }
-  .last-update { font-size: 11px; color: #8a8470; font-family: 'JetBrains Mono', monospace; }
+  .last-update { font-size: 11px; color: #6a9478; font-family: 'JetBrains Mono', monospace; }
   .badge-ok { background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .badge-warn { background: #fff8e1; color: #f57f17; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
   .badge-error { background: #ffebee; color: #ba1a1a; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
-  .auto-dot { width:8px; height:8px; border-radius:50%; background:#2e7d32; display:inline-block; animation: pulse 2s infinite; }
+  .auto-dot { width:8px; height:8px; border-radius:50%; background:#4ade80; display:inline-block; animation: pulse 2s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── SIDEBAR OSCURO VERDE EJECUTIVO ── */
+  aside {
+    background: #0a1f12 !important;
+    border-right-color: #1a3a22 !important;
+  }
+  aside h1 { color: #6abf8a !important; }
+  aside p  { color: #5a8a6a !important; }
+  aside nav a {
+    color: #7ac99a !important;
+  }
+  aside nav a:hover {
+    background: #1a3a22 !important;
+    color: #a5f3c0 !important;
+  }
+  aside nav a.nav-active {
+    background: #0f6b35 !important;
+    color: #ffffff !important;
+    border-right-color: #4ade80 !important;
+  }
+  aside nav a .material-symbols-outlined { color: inherit !important; }
+  aside .w-20 { border: 2px solid #1a3a22; border-radius: 12px; }
+
+  /* ── TOPBAR OSCURO VERDE EJECUTIVO ── */
+  header {
+    background: #0d1f14 !important;
+    border-bottom-color: #1a3a22 !important;
+  }
+  header input {
+    background: #162b1c !important;
+    border-color: #2a5a38 !important;
+    color: #d4ede0 !important;
+  }
+  header input::placeholder { color: #4a7a5a !important; }
+  header .material-symbols-outlined { color: #6abf8a !important; }
+  header button:hover .material-symbols-outlined { color: #a5f3c0 !important; }
+  header .font-bold { color: #a5f3c0 !important; }
+  header .border-r { border-color: #1a3a22 !important; }
 
   /* Cuando la sección activa es saldo o movimiento, la columna de tablas ocupa todo el ancho */
   body[data-active="saldo"] .tables-col,
@@ -95,17 +133,17 @@
     </div>
   </div>
   <nav class="flex-1 space-y-1 px-2">
-    <a data-nav="dashboard" onclick="showSection('dashboard')" class="flex flex-col items-center gap-1 px-2 py-3 text-primary font-bold border-r-4 border-primary bg-primary-container/10 transition-colors duration-200 cursor-pointer" href="#">
+    <a data-nav="dashboard" onclick="showSection('dashboard')" class="nav-active flex flex-col items-center gap-1 px-2 py-3 transition-colors duration-200 cursor-pointer" href="#">
       <span class="material-symbols-outlined">dashboard</span>
       <span class="font-body-sm text-[11px]">Dashboard</span>
     </a>
-    <a data-nav="saldo" onclick="showSection('saldo')" class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200 cursor-pointer" href="#">
+    <a data-nav="saldo" onclick="showSection('saldo')" class="flex flex-col items-center gap-1 px-2 py-3 transition-colors duration-200 cursor-pointer" href="#">
       <span class="material-symbols-outlined">inventory_2</span><span class="font-body-sm text-[11px]">Saldo</span>
     </a>
-    <a data-nav="movimiento" onclick="showSection('movimiento')" class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200 cursor-pointer" href="#">
+    <a data-nav="movimiento" onclick="showSection('movimiento')" class="flex flex-col items-center gap-1 px-2 py-3 transition-colors duration-200 cursor-pointer" href="#">
       <span class="material-symbols-outlined">history</span><span class="font-body-sm text-[11px]">Movimiento</span>
     </a>
-    <a data-nav="bajas" onclick="showSection('bajas')" class="flex flex-col items-center gap-1 px-2 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors duration-200 cursor-pointer" href="#">
+    <a data-nav="bajas" onclick="showSection('bajas')" class="flex flex-col items-center gap-1 px-2 py-3 transition-colors duration-200 cursor-pointer" href="#">
       <span class="material-symbols-outlined">trending_down</span><span class="font-body-sm text-[11px]">Reporte de Bajas</span>
     </a>
   </nav>
@@ -398,7 +436,7 @@
             <span class="font-label-data" id="legend-vigentes">—</span>
           </div>
           <div class="flex items-center justify-between text-[13px]">
-            <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-secondary"></div><span>Por Vencer</span></div>
+            <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full" style="background:#f59e0b"></div><span>Por Vencer</span></div>
             <span class="font-label-data" id="legend-cercanos">—</span>
           </div>
           <div class="flex items-center justify-between text-[13px]">
@@ -769,7 +807,7 @@ function renderSaldo(data, replace = true) {
   
   data.forEach(row => {
     const days = daysToExpiry(row[cols.expira]);
-    const rowClass = days !== null && days < 0 ? 'text-error font-medium' : days !== null && days <= ALERT_DAYS ? 'text-secondary font-medium' : 'text-on-surface';
+    const rowClass = days !== null && days < 0 ? 'text-error font-medium' : days !== null && days <= ALERT_DAYS ? 'text-amber-600 font-medium' : 'text-on-surface';
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-surface-container-low transition-colors ' + rowClass;
     tr.innerHTML =
@@ -823,7 +861,7 @@ function renderAlertas(data) {
 
   const frag = document.createDocumentFragment();
   alertas.forEach(({ row, days }) => {
-    const rowClass = days <= 0 ? 'text-error font-medium' : 'text-secondary font-medium';
+    const rowClass = days <= 0 ? 'text-error font-medium' : 'text-amber-600 font-medium';
     const diasLabel = days < 0 ? 'VENCIDO (' + Math.abs(days) + 'd)' : days === 0 ? 'HOY' : days + ' dias';
     const badge = days <= 0 ? '<span class="badge-error">VENCIDO</span>' : days <= 60 ? '<span class="badge-error">CRITICO</span>' : '<span class="badge-warn">PROXIMO</span>';
     const tr = document.createElement('tr');
@@ -942,8 +980,8 @@ function updateKPIsAndDonut(data) {
   const ctx    = canvas.getContext('2d');
   ctx.clearRect(0, 0, 144, 144);
   const segs = [
-    { v: vig, c: '#584B09' },
-    { v: prox, c: '#725478' },
+    { v: vig, c: '#0f6b35' },
+    { v: prox, c: '#f59e0b' },
     { v: venc, c: '#ba1a1a' }
   ];
   let start = -Math.PI / 2;
@@ -956,7 +994,7 @@ function updateKPIsAndDonut(data) {
     start += sweep;
   });
   ctx.beginPath(); ctx.arc(72, 72, 40, 0, 2 * Math.PI);
-  ctx.fillStyle = '#faf8f2'; ctx.fill();
+  ctx.fillStyle = '#f4faf6'; ctx.fill();
 }
 
 // Mantener compatibilidad con llamadas individuales
@@ -1017,7 +1055,7 @@ function buscarLote() {
   expEl.textContent = first[cols.expira] || '—';
   expEl.className = 'font-label-data text-[13px] font-bold ' +
     (days !== null && days < 0  ? 'text-error' :
-     days !== null && days <= 30 ? 'text-secondary' : 'text-on-surface');
+     days !== null && days <= 30 ? 'text-amber-600' : 'text-on-surface');
 
   document.getElementById('lote-estado-val').innerHTML = statusBadge(days);
   header.classList.remove('hidden');
@@ -1463,12 +1501,7 @@ function showSection(section) {
   // 2. Nav links
   document.querySelectorAll('nav a[data-nav]').forEach(l => {
     const isActive = l.getAttribute('data-nav') === section;
-    l.classList.toggle('text-primary',            isActive);
-    l.classList.toggle('font-bold',               isActive);
-    l.classList.toggle('border-r-4',              isActive);
-    l.classList.toggle('border-primary',          isActive);
-    l.classList.toggle('bg-primary-container/10', isActive);
-    l.classList.toggle('text-on-surface-variant', !isActive);
+    l.classList.toggle('nav-active', isActive);
   });
 
   // 3. Mostrar/ocultar: solo toca los elementos que realmente cambian
@@ -1553,7 +1586,7 @@ function renderBajas(data, replace = true) {
   const frag = document.createDocumentFragment();
   data.forEach(row => {
     const days = daysToExpiry(row[cols.expira]);
-    const rowClass = days !== null && days < 0 ? 'text-error' : days !== null && days <= 30 ? 'text-secondary' : '';
+    const rowClass = days !== null && days < 0 ? 'text-error' : days !== null && days <= 30 ? 'text-amber-600' : '';
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-surface-container-low transition-colors ' + rowClass;
     tr.innerHTML =
@@ -1638,17 +1671,17 @@ function mostrarAlertas() {
   const alertas = document.querySelectorAll('#tbody-alertas tr:not(.loading-row):not(.error-row)');
   const count = alertas.length;
   const msg = count > 0
-    ? `<span style="color:#ba1a1a;font-size:28px;font-weight:700">${count}</span><br><span style="font-size:13px;color:#4a4535">producto${count !== 1 ? 's' : ''} con alerta de vencimiento activa</span><br><br><span style="font-size:12px;color:#8a8470">Ir a <b>Alertas Críticas</b> para ver el detalle.</span>`
-    : `<span style="color:#2e7d32;font-size:28px;font-weight:700">✓</span><br><span style="font-size:13px;color:#4a4535">Sin alertas críticas activas</span>`;
+    ? `<span style="color:#ba1a1a;font-size:28px;font-weight:700">${count}</span><br><span style="font-size:13px;color:#3a5244">producto${count !== 1 ? 's' : ''} con alerta de vencimiento activa</span><br><br><span style="font-size:12px;color:#6a9478">Ir a <b>Alertas Críticas</b> para ver el detalle.</span>`
+    : `<span style="color:#1a7a42;font-size:28px;font-weight:700">✓</span><br><span style="font-size:13px;color:#3a5244">Sin alertas críticas activas</span>`;
   mostrarModal('🔔 Alertas de Vencimiento', msg);
 }
 
 function mostrarInfoApp() {
   const msg = `<div style="text-align:center;padding:8px 0">
     <div style="font-size:40px;margin-bottom:8px">👷</div>
-    <div style="font-size:18px;font-weight:700;color:#584B09;margin-bottom:4px">Creado por Omar Bernales</div>
-    <div style="font-size:12px;color:#8a8470;margin-bottom:16px">Odan89</div>
-    <div style="font-size:12px;color:#4a4535;background:#f3f0e5;border-radius:8px;padding:10px 14px;text-align:left;line-height:1.8">
+    <div style="font-size:18px;font-weight:700;color:#0f6b35;margin-bottom:4px">Creado por Omar Bernales</div>
+    <div style="font-size:12px;color:#6a9478;margin-bottom:16px">Odan89</div>
+    <div style="font-size:12px;color:#3a5244;background:#eaf3ed;border-radius:8px;padding:10px 14px;text-align:left;line-height:1.8">
       📦 <b>Sistema:</b> Salon Logic WMS<br>
       🔗 <b>Fuente:</b> Google Sheets en tiempo real<br>
       ⏱ <b>Refresco:</b> Automático cada 5 min<br>

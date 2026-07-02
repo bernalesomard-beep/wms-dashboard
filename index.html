@@ -325,6 +325,14 @@
             <button onclick="exportMovTRFMAS()" class="flex items-center gap-1 px-3 py-1 bg-surface border border-primary text-primary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">table_view</span><span>TRFMAS</span>
             </button>
+            <div class="flex items-center gap-2">
+              <label class="font-body-sm text-on-surface-variant text-[12px]">Estado:</label>
+              <select id="filter-comentario-mov" onchange="filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg px-2 py-1 focus:ring-1 focus:ring-primary outline-none">
+                <option value="">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="trasladado">Trasladado</option>
+              </select>
+            </div>
             <div class="relative flex items-center">
               <span class="material-symbols-outlined absolute left-2 text-[16px] text-on-surface-variant">search</span>
               <input id="search-mov" oninput="debouncedFilterMov()" onkeydown="if(event.key==='Enter')filterMov()" class="bg-surface-container-low border border-outline text-on-surface font-label-data text-[12px] rounded-lg pl-7 pr-2 py-1 focus:ring-1 focus:ring-primary outline-none w-40" placeholder="Buscar...">
@@ -352,10 +360,11 @@
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">UBIC. DESTINO</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">CANTIDAD</th>
                 <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">USUARIO</th>
+                <th class="font-table-header text-table-header px-3 py-2 text-center border border-outline-variant">ESTADO</th>
               </tr>
             </thead>
             <tbody id="tbody-mov">
-              <tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando datos desde Google Sheets...</td></tr>
+              <tr class="loading-row"><td colspan="9"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Cargando datos desde Google Sheets...</td></tr>
             </tbody>
           </table>
         </div>
@@ -581,6 +590,14 @@
 const URL_SALDO = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=273620597&single=true&output=csv';
 const URL_MOV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=2101441845&single=true&output=csv';
 const URL_BAJAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMDxJZ_QVjWKqD44LIy9q_vvBIElkZQBaMTpQEoEI4L7ak7KORfyoCa4jLIMNFpAMOi7FIX-JVP132/pub?gid=868163741&single=true&output=csv';
+
+// ── APPS SCRIPT (para marcar "Trasladado" al usar TRFMAS en Movimientos) ──
+// Pega aquí la URL de despliegue de tu Apps Script (termina en /exec) una vez
+// que lo instales y despliegues para esta hoja de cálculo (ver Code.gs).
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGtDfdHvzK_ehYztNUvuvYAuucpfN8YRr6_RKq2QeNy1Pnv1DWXK8yqJ5sD0rhzWoA3w/exec';
+// Debe ser EXACTAMENTE el mismo texto que la constante TOKEN en Code.gs
+const UPLOAD_TOKEN = '2026';
+
 const ALERT_DAYS = 90;
 const CACHE_TTL  = 5 * 60 * 1000; // 5 minutos en ms
 
@@ -716,6 +733,8 @@ function getMovCols(keys) {
     destino:  detectCol(keys, [/^RTOLC$/i, /destino/i, /to/i]) || keys[9],
     cantidad: detectCol(keys, [/^RQTYT$/i, /cantidad/i, /qty/i]) || keys[7],
     usuario:  detectCol(keys, [/^RCOM$/i, /usuario/i, /user/i]) || keys[12],
+    id:         detectCol(keys, [/^id$/i]) || keys[0],
+    comentario: detectCol(keys, [/^comentario$/i, /coment/i]) || keys[13],
   };
 }
 
@@ -777,8 +796,8 @@ async function loadSaldo(forceRefresh = true) {
     invalidarCachesCols();
     dataSaldo = toObjects(headers, rows);
     buildSearchIndex('saldo', dataSaldo);
-    renderVirtual('saldo', dataSaldo, renderSaldo);
-    renderAlertas(dataSaldo);
+    refrescarVistaSaldo();
+    refrescarVistaAlertas();
     updateKPIsAndDonut(dataSaldo);
     const t = ts();
     document.getElementById('last-update-saldo').textContent = t;
@@ -889,17 +908,18 @@ function renderAlertas(data) {
 async function loadMov(forceRefresh = true) {
   const btn = document.getElementById('btn-mov');
   btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Cargando...';
-  document.getElementById('tbody-mov').innerHTML = '<tr class="loading-row"><td colspan="8"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
+  document.getElementById('tbody-mov').innerHTML = '<tr class="loading-row"><td colspan="9"><span class="material-symbols-outlined spin" style="vertical-align:middle;margin-right:8px">sync</span>Conectando con Google Sheets...</td></tr>';
 
   try {
     const text = await fetchCSV(URL_MOV, forceRefresh);
     const { headers, rows } = parseCSV(text);
     dataMov = toObjects(headers, rows);
+    if (dataMov.length) aplicarOverridesTrasladado(dataMov, getMovColsCached(Object.keys(dataMov[0])));
     buildSearchIndex('mov', dataMov);
-    renderVirtual('mov', dataMov, renderMov);
+    refrescarVistaMov();
     document.getElementById('last-update-mov').textContent = ts();
   } catch(e) {
-    document.getElementById('tbody-mov').innerHTML = '<tr class="error-row"><td colspan="8">Error al cargar movimientos: ' + e.message + '</td></tr>';
+    document.getElementById('tbody-mov').innerHTML = '<tr class="error-row"><td colspan="9">Error al cargar movimientos: ' + e.message + '</td></tr>';
   }
   btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar';
 }
@@ -909,7 +929,7 @@ async function loadMov(forceRefresh = true) {
 // =============================================
 function renderMov(data, replace = true) {
   const tbody = document.getElementById('tbody-mov');
-  if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Sin movimientos registrados</td></tr>'; return; }
+  if (!data.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Sin movimientos registrados</td></tr>'; return; }
   
   const cols = getMovColsCached(Object.keys(data[0]));
   const frag = document.createDocumentFragment();
@@ -917,8 +937,13 @@ function renderMov(data, replace = true) {
   data.forEach(row => {
     const destino = row[cols.destino] || '';
     const cantidad= row[cols.cantidad] || '';
+    const esTrasladado = String(row[cols.comentario] || '').trim().toLowerCase() === 'trasladado';
+    const estadoBadge = esTrasladado
+      ? '<span class="badge-ok">TRASLADADO</span>'
+      : '<span class="badge-warn">PENDIENTE</span>';
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-surface-container-low transition-colors';
+    tr.dataset.id = row[cols.id] || '';
     tr.innerHTML =
         `<td class="px-3 py-3 text-center border border-outline-variant"><input type="checkbox" class="row-check w-4 h-4 accent-primary cursor-pointer"></td>`
       + `<td class="px-3 py-3 font-label-data whitespace-nowrap border border-outline-variant">${row[cols.fecha]||'—'}</td>`
@@ -927,7 +952,8 @@ function renderMov(data, replace = true) {
       + `<td class="px-3 py-3 border border-outline-variant">${row[cols.origen]||'—'}</td>`
       + `<td class="px-3 py-3 font-label-data border border-outline-variant">${destino||'—'}</td>`
       + `<td class="px-3 py-3 text-right font-label-data font-bold border border-outline-variant">${cantidad||'0'}</td>`
-      + `<td class="px-3 py-3 border border-outline-variant">${row[cols.usuario]||'—'}</td>`;
+      + `<td class="px-3 py-3 border border-outline-variant">${row[cols.usuario]||'—'}</td>`
+      + `<td class="px-3 py-3 text-center border border-outline-variant">${estadoBadge}</td>`;
     frag.appendChild(tr);
   });
   if (replace) tbody.innerHTML = '';
@@ -1131,6 +1157,7 @@ function filterMov() {
   const q = document.getElementById('search-mov').value.toLowerCase().trim();
   const fechaDesde = document.getElementById('fecha-desde').value;
   const fechaHasta = document.getElementById('fecha-hasta').value;
+  const estadoSel  = document.getElementById('filter-comentario-mov').value; // '', 'pendiente', 'trasladado'
 
   const cols = getMovColsCached(Object.keys(dataMov[0]));
   const colFecha = cols.fecha;
@@ -1150,7 +1177,12 @@ function filterMov() {
       cumpleDesde = !fechaDesde || fechaISO >= fechaDesde;
       cumpleHasta = !fechaHasta || fechaISO <= fechaHasta;
     }
-    return coincideTexto && cumpleDesde && cumpleHasta;
+    const comentarioVal = String(r[cols.comentario] || '').trim().toLowerCase();
+    const esTrasladado   = comentarioVal === 'trasladado';
+    const cumpleEstado = !estadoSel
+      || (estadoSel === 'trasladado' && esTrasladado)
+      || (estadoSel === 'pendiente'  && !esTrasladado);
+    return coincideTexto && cumpleDesde && cumpleHasta && cumpleEstado;
   });
 
   renderVirtual('mov', filtered, renderMov);
@@ -1160,6 +1192,7 @@ function clearFilterMov() {
   document.getElementById('search-mov').value = '';
   document.getElementById('fecha-desde').value = '';
   document.getElementById('fecha-hasta').value = '';
+  document.getElementById('filter-comentario-mov').value = '';
   renderVirtual('mov', dataMov, renderMov);
 }
 
@@ -1471,6 +1504,69 @@ function exportMovTRFMAS() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'TRFMAS');
   XLSX.writeFile(wb, 'TRFMAS.xls');
+
+  // Si se exportó una selección puntual (no "todos"), marcamos esas filas como Trasladado
+  if (selectedRows.length > 0) {
+    const colsMov = getMovColsCached(Object.keys(source[0]));
+    const ids = source.map(row => row[colsMov.id]).filter(Boolean);
+    if (ids.length) marcarTrasladadoMov(ids);
+  }
+}
+
+// =============================================
+// MARCAR COMO "Trasladado" LA COLUMNA COMENTARIO EN EL SHEET
+// =============================================
+// El CSV publicado del Sheet tarda 1-2 min en reflejar cambios escritos vía
+// Apps Script. Mientras tanto, guardamos aquí los IDs recién marcados para
+// que un auto-refresco de por medio no los "regrese" a Pendiente en pantalla.
+const _trasladadosOverride = {}; // id -> timestamp en que se marcó
+const OVERRIDE_TTL = 5 * 60 * 1000; // 5 minutos: tiempo de sobra para que el CSV se actualice
+
+function aplicarOverridesTrasladado(data, cols) {
+  const now = Date.now();
+  Object.keys(_trasladadosOverride).forEach(id => {
+    if (now - _trasladadosOverride[id] > OVERRIDE_TTL) delete _trasladadosOverride[id]; // ya caducó, el CSV ya debería traerlo bien
+  });
+  if (!Object.keys(_trasladadosOverride).length) return;
+  data.forEach(row => {
+    const id = String(row[cols.id]);
+    if (_trasladadosOverride[id] !== undefined) row[cols.comentario] = 'Trasladado';
+  });
+}
+
+async function marcarTrasladadoMov(ids) {
+  if (!APPS_SCRIPT_URL) {
+    console.warn('APPS_SCRIPT_URL no configurado: no se pudo marcar Trasladado en el Sheet.');
+    return;
+  }
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS
+      body: JSON.stringify({ token: UPLOAD_TOKEN, action: 'marcarTrasladado', ids })
+    });
+    const result = await resp.json();
+    if (!result.ok) {
+      alert('El archivo TRFMAS se descargó, pero no se pudo marcar "Trasladado" en el Sheet:\n' + (result.error || 'Error desconocido'));
+      return;
+    }
+  } catch (e) {
+    alert('El archivo TRFMAS se descargó, pero no se pudo conectar con el Sheet para marcar "Trasladado": ' + e.message);
+    return;
+  }
+
+  // Actualiza en memoria (dataMov y _vsData.mov) sin esperar al próximo refresco del CSV
+  const idSet = new Set(ids.map(String));
+  const colsMov = getMovColsCached(Object.keys(dataMov[0] || {}));
+  const now = Date.now();
+  [dataMov, _vsData.mov].forEach(arr => {
+    arr.forEach(row => {
+      if (idSet.has(String(row[colsMov.id]))) row[colsMov.comentario] = 'Trasladado';
+    });
+  });
+  idSet.forEach(id => { _trasladadosOverride[id] = now; });
+  buildSearchIndex('mov', dataMov);
+  refrescarVistaMov();
 }
 
 // Pre-indexar elementos por sección UNA sola vez (evita querySelectorAll repetido)
@@ -1551,7 +1647,7 @@ async function loadBajas(forceRefresh = true) {
     const { headers, rows } = parseCSV(text);
     dataBajas = toObjects(headers, rows);
     buildSearchIndex('bajas', dataBajas);
-    renderVirtual('bajas', dataBajas, renderBajas);
+    refrescarVistaBajas();
     document.getElementById('last-update-bajas').textContent = ts();
   } catch(e) {
     document.getElementById('tbody-bajas').innerHTML = '<tr class="error-row"><td colspan="12">Error al cargar: ' + e.message + '</td></tr>';
@@ -1647,7 +1743,45 @@ function clearFilterBajas() {
 }
 
 
+// =============================================
+// REAPLICAR FILTROS/BUSQUEDA VIGENTES TRAS CADA CARGA
+// (para que el auto-refresco no te resetee lo que estabas viendo)
+// =============================================
+function _valorActivo(id) {
+  const el = document.getElementById(id);
+  return !!(el && String(el.value || '').trim());
+}
+
+function refrescarVistaSaldo() {
+  const globalQ = (document.getElementById('global-search')?.value || '').trim();
+  if (globalQ) { debouncedGlobalSearch(globalQ); return; }
+  const activo = ['search-saldo','filter-whs-saldo','filter-codigo-saldo','filter-lote-saldo'].some(_valorActivo);
+  if (activo && dataSaldo.length) filterSaldo();
+  else renderVirtual('saldo', dataSaldo, renderSaldo);
+}
+
+function refrescarVistaAlertas() {
+  const activo = ['search-alertas','filter-whs-alertas'].some(_valorActivo);
+  if (activo && dataSaldo.length) filterAlertas();
+  else renderAlertas(dataSaldo);
+}
+
+function refrescarVistaMov() {
+  const globalQ = (document.getElementById('global-search')?.value || '').trim();
+  if (globalQ) { debouncedGlobalSearch(globalQ); return; }
+  const activo = ['search-mov','fecha-desde','fecha-hasta','filter-comentario-mov'].some(_valorActivo);
+  if (activo && dataMov.length) filterMov();
+  else renderVirtual('mov', dataMov, renderMov);
+}
+
+function refrescarVistaBajas() {
+  const activo = ['search-bajas','filter-destino-bajas','bajas-desde','bajas-hasta'].some(_valorActivo);
+  if (activo && dataBajas.length) filterBajas();
+  else renderVirtual('bajas', dataBajas, renderBajas);
+}
+
 // Carga progresiva: saldo primero (tab activo), luego mov y bajas en background
+let _lastAutoRefresh = Date.now();
 async function cargarTodo(forceRefresh = false) {
   // Saldo es lo primero que el usuario ve — cargarlo antes
   await loadSaldo(forceRefresh);
@@ -1656,6 +1790,7 @@ async function cargarTodo(forceRefresh = false) {
     loadMov(forceRefresh),
     loadBajas(forceRefresh)
   ]);
+  _lastAutoRefresh = Date.now();
 }
 // Solo auto-refresh si la pestaña está activa (evita refreshes innecesarios)
 function autoRefresh() {
@@ -1663,6 +1798,16 @@ function autoRefresh() {
 }
 cargarTodo(false); // primera carga: usa caché si hay
 setInterval(autoRefresh, 600000); // auto-refresco inteligente: solo si pestaña activa
+
+// Si estuviste con la pestaña oculta/minimizada y ya pasaron 10+ min desde el
+// último refresco, al volver a la pestaña se refresca de inmediato en vez de
+// esperar al próximo "tick" del setInterval (que el navegador puede pausar
+// mientras la pestaña está en segundo plano).
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && Date.now() - _lastAutoRefresh >= 600000) {
+    autoRefresh();
+  }
+});
 
 // =============================================
 // MODAL CAMPANILLA Y USUARIO

@@ -278,6 +278,13 @@
             <button onclick="loadSaldo()" id="btn-saldo" class="flex items-center gap-1 text-primary font-bold text-body-sm hover:underline whitespace-nowrap">
               <span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar
             </button>
+            <button onclick="descargarPlantillaSaldo()" id="btn-descargar-plantilla" class="flex items-center gap-1 px-3 py-1 bg-surface border border-outline text-on-surface-variant font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">download</span><span>Descargar Plantilla</span>
+            </button>
+            <input type="file" id="input-plantilla-saldo" accept=".xlsx,.xls,.csv" class="hidden" onchange="cargarPlantillaSaldo(event)">
+            <button onclick="document.getElementById('input-plantilla-saldo').click()" id="btn-plantilla-saldo" class="flex items-center gap-1 px-3 py-1 bg-surface border border-primary text-primary font-bold rounded text-[12px] hover:bg-surface-container-high transition-colors whitespace-nowrap">
+              <span class="material-symbols-outlined text-[16px]">upload_file</span><span>Cargar Plantilla</span>
+            </button>
           </div>
         </div>
         <div id="saldo-scroll-inner" class="saldo-scroll overflow-y-auto max-h-[400px] custom-scrollbar" style="will-change:transform">
@@ -809,6 +816,101 @@ async function loadSaldo(forceRefresh = true) {
     document.getElementById('tbody-alertas').innerHTML = '<tr class="error-row"><td colspan="8">Error al cargar alertas</td></tr>';
   }
   btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">refresh</span> Actualizar';
+}
+
+// =============================================
+// DESCARGAR PLANTILLA DE SALDO (basada en cabeceras reales del Sheet)
+// =============================================
+function descargarPlantillaSaldo() {
+  if (!dataSaldo.length) {
+    alert('Aún no se han cargado datos de Saldo. Presiona "Actualizar" primero (se usan como base para armar la plantilla con las cabeceras correctas).');
+    return;
+  }
+
+  // Las cabeceras vienen del CSV en el mismo orden que las columnas del Sheet:
+  // headers[0] = A (ID SALDO), headers[1..9] = B..J, headers[10] = K (ESTATUS), etc.
+  const headers = Object.keys(dataSaldo[0]);
+  if (headers.length < 10) {
+    alert('No se pudo determinar la estructura de columnas del Sheet (se esperaban al menos 10 columnas).');
+    return;
+  }
+  const templateHeaders = headers.slice(1, 10); // B..J -> 9 columnas
+
+  const aoa = [templateHeaders];
+  dataSaldo.forEach(row => {
+    aoa.push(templateHeaders.map(h => row[h] || ''));
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Plantilla Saldo');
+  const fecha = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `plantilla_saldo_${fecha}.xlsx`);
+}
+
+// =============================================
+// CARGAR PLANTILLA -> SOBRE-ESCRIBE "0. SALDO" EN EL SHEET
+// =============================================
+async function cargarPlantillaSaldo(event) {
+  const file = event.target.files[0];
+  event.target.value = ''; // permite volver a elegir el mismo archivo despues
+  if (!file) return;
+
+  if (!APPS_SCRIPT_URL) {
+    alert('Falta configurar APPS_SCRIPT_URL en el código (constante al inicio del script). Revisa las instrucciones de Code.gs.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-plantilla-saldo');
+  const btnOriginal = btn.innerHTML;
+
+  try {
+    // Leer archivo (xlsx, xls o csv) con SheetJS
+    const buffer = await file.arrayBuffer();
+    const wb = XLSX.read(buffer, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+
+    if (!aoa.length) { alert('El archivo está vacío.'); return; }
+
+    const headers = aoa[0].map(h => String(h || '').trim());
+    const rows = aoa.slice(1).filter(r => r.some(v => String(v || '').trim() !== ''));
+
+    if (!rows.length) { alert('La plantilla no tiene filas de datos (solo cabeceras).'); return; }
+
+    const confirmMsg = `Vas a SOBRE-ESCRIBIR la pestaña "0. SALDO" con ${rows.length} fila(s).\n\n` +
+      `Esto reemplaza toda la información actual de esa hoja (columnas A-K se regeneran, columnas L-U se limpian).\n\n` +
+      `¿Confirmas que deseas continuar?`;
+    if (!confirm(confirmMsg)) return;
+
+    btn.innerHTML = '<span class="material-symbols-outlined spin text-[16px]">sync</span> Subiendo...';
+    btn.style.pointerEvents = 'none';
+
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS
+      body: JSON.stringify({ token: UPLOAD_TOKEN, headers, rows })
+    });
+
+    const result = await resp.json();
+
+    if (!result.ok) {
+      alert('No se pudo cargar la plantilla:\n' + (result.error || 'Error desconocido'));
+      return;
+    }
+
+    alert(`Listo. Se escribieron ${result.filas} fila(s) en "0. SALDO".\n\n` +
+      `Nota: el Sheet publicado (CSV) puede tardar 1-2 minutos en reflejar el cambio. ` +
+      `Presiona "Actualizar" en unos momentos si aún ves datos viejos.`);
+
+    setTimeout(() => loadSaldo(true), 3000);
+
+  } catch (e) {
+    alert('Error al procesar/subir la plantilla: ' + e.message);
+  } finally {
+    btn.innerHTML = btnOriginal;
+    btn.style.pointerEvents = '';
+  }
 }
 
 // =============================================
